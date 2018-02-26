@@ -1,6 +1,6 @@
 import serial
 
-manipulator = serial.Serial('COM5', timeout=None, write_timeout=None)
+manipulator = serial.Serial('COM7', timeout=None, write_timeout=None)
 
 # Default settings for Serial:
 #
@@ -64,6 +64,8 @@ def set_velocity(velocity, resolution):
     :param velocity: velocity value in um/second
     :param resolution: Resolution either HIGH_RESOLUTION (0.4um/second) or LOW_RESOLUTION (2um/second)
     """
+
+    #TODO Verify units of velocity
 
     if velocity <= 0:
         raise ValueError('Velocity must be positive')
@@ -143,3 +145,52 @@ def reset():
     Resets the manipulator. No value is returned from the manipulator
     """
     manipulator.write(b'r\r')
+
+
+def get_status():
+
+    manipulator.write(b's\r')
+
+    status_bytes = manipulator.read(33)
+
+    flag_byte = int.from_bytes(status_bytes[0], byteorder='little')
+    flag_2_byte = int.from_bytes(status_bytes[15], byteorder='little')
+
+    return {
+        'FLAGS': {
+            'SETUP': flag_byte & 0b00001111,
+            'ROE_DIR': 'Negative' if (flag_byte & (1<<4)) == (1<<4) else 'Positive',
+            'REL_ABS_F': 'Absolute' if (flag_byte & (1<<5)) == (1<<5) else 'Relative',
+            'MODE_F': 'Continuous' if (flag_byte & (1<<6)) == (1<<6) else 'Pulse',
+            'STORE_F': 'Stored' if (flag_byte & (1<<7)) == (1<<7) else 'Erased'
+        },
+        'UDIRX': int.from_bytes(status_bytes[1], byteorder='little'),
+        'UDIRY': int.from_bytes(status_bytes[2], byteorder='little'),
+        'UDIRZ': int.from_bytes(status_bytes[3], byteorder='little'),
+        'ROE_VARI': int.from_bytes(status_bytes[4:6], byteorder='little'),
+        'UOFFSET': int.from_bytes(status_bytes[6:8], byteorder='little'),
+        'URANGE': int.from_bytes(status_bytes[8:10], byteorder='little'),
+        'PULSE': int.from_bytes(status_bytes[10:12], byteorder='little'),
+        'USPEED': int.from_bytes(status_bytes[12:14], byteorder='little'),
+        'INDEVICE': int.from_bytes(status_bytes[14], byteorder='little'),
+        'FLAGS_2': {
+            'LOOP_MODE': 'Loop' if (flag_2_byte & (1<<0)) == (1<<0) else 'Execute Once',
+            'LEARN_MODE': 'Learning' if (flag_2_byte & (1<<1)) == (1<<1) else 'Not Learning',
+            'STEP_MODE': '50 usteps/step' if (flag_2_byte & (1<<2)) == (1<<2) else '10 usteps/step',
+            'JOYSTICK_SIDE': 'Enabled' if (flag_2_byte & (1<<3)) == (1<<3) else 'Disabled',        # SW2_MODE
+            'ENABLE_JOYSTICK': 'Enabled' if (flag_2_byte & (1<<4)) == (1<<4) else 'Keypad',        # SW1_MODE
+            'ENABLE_ROE_SWITCH': 'Enabled' if (flag_2_byte & (1<<5)) == (1<<5) else 'Disabled',    # SW3_MODE
+            '4_AND_5_SWITCHES': 'Enabled' if (flag_2_byte & (1<<6)) == (1<<6) else 'Disabled',     # SW4_MODE
+            'REVERSE_IT': 'Reversed' if (flag_2_byte & (1<<7)) == (1<<7) else 'Normal Sequence'
+        },
+        'JUMPSPD': int.from_bytes(status_bytes[16:18], byteorder='little'),
+        'HIGHSPD': int.from_bytes(status_bytes[18:20], byteorder='little'),
+        'DEAD': int.from_bytes(status_bytes[20:22], byteorder='little'),
+        # Could be a typo in the manual as to why both DEAD and WATCH_DOG cover the same range of bytes
+        'WATCH_DOG': int.from_bytes(status_bytes[20:22], byteorder='little'),
+        'STEP_DIV': int.from_bytes(status_bytes[22:24], byteorder='little'),
+        'STEP_MUL': int.from_bytes(status_bytes[24:26], byteorder='little'),
+        'XSPEED_RES': 'Low Resolution' if (int.from_bytes(status_bytes[26:28], byteorder='little') & (1<<15)) == (1<<15) else 'High Resolution',
+        'XSPEED': int.from_bytes(status_bytes[26:28], byteorder='little') & ~(1<<15),
+        'VERSION': int.from_bytes(status_bytes[28:30], byteorder='little')
+    }
