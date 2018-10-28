@@ -285,12 +285,13 @@ class GUI:
         self.Button_begin = Button(self.Current_Frame)
         self.Button_begin.place(relx=0.469, rely=0.105, height=26, width=125)
         self.Button_begin.configure(activebackground="#d9d9d9")
-        self.Button_begin.configure(text='''Begin Experiment''')
+        self.Button_begin.configure(text='''Start Current''')
+        self.Button_begin.configure(command=lambda: setCurrent(user_cur, user_dur))
 
         self.Button_stop = Button(self.Current_Frame)
         self.Button_stop.place(relx=0.469, rely=0.211, height=26, width=119)
         self.Button_stop.configure(activebackground="#d9d9d9")
-        self.Button_stop.configure(text='''Stop Experiment''')
+        self.Button_stop.configure(text='''Stop Current''')
 
         self.Button_ps_interrupt = Button(self.Current_Frame)
         self.Button_ps_interrupt.place(relx=0.765, rely=0.877, height=26
