@@ -1,10 +1,11 @@
 #Event Functions#
-from guiFrame import *
+
+from pagegui1 import *
+
 def setCurrent(amp, time):
-    amp=user_cur.get()
-    time=user_dur.get()
+    #Label_status_amps.set("Amperes (mA): "+amp)
     print ('Set current to ', amp, 'For time ', time)
-    return 1
+    return amp
 
 def initPowerSupply():  #One time set up per launch
     #Set output current/voltage range

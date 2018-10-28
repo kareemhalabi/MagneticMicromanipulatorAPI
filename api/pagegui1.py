@@ -6,6 +6,7 @@
 #    Oct 27, 2018 05:38:37 PM EDT  platform: Linux
 
 import sys
+import currentFunctions
 
 try:
     from Tkinter import *
@@ -20,6 +21,8 @@ except ImportError:
     py3 = True
 
 import pagegui1_support
+from currentFunctions import *
+
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -45,6 +48,7 @@ def destroy_GUI():
     global w
     w.destroy()
     w = None
+
 
 
 class GUI:
@@ -286,7 +290,7 @@ class GUI:
         self.Button_begin.place(relx=0.469, rely=0.105, height=26, width=125)
         self.Button_begin.configure(activebackground="#d9d9d9")
         self.Button_begin.configure(text='''Start Current''')
-        self.Button_begin.configure(command=lambda: setCurrent(user_cur, user_dur))
+        self.Button_begin.configure(command= setCurrent(self.Entry_amps.get(), self.Entry_duration.get()))
 
         self.Button_stop = Button(self.Current_Frame)
         self.Button_stop.place(relx=0.469, rely=0.211, height=26, width=119)
@@ -372,11 +376,13 @@ class GUI:
         self.Label_status_resolution.configure(activebackground="#f9f9f9")
         self.Label_status_resolution.configure(text='''Resolution:''')
 
-        self.Label_status_amps = Label(self.Status_Frame)
+        status_amps = StringVar()
+        self.Label_status_amps = Label(self.Status_Frame, textvariable=status_amps)
         self.Label_status_amps.place(relx=0.058, rely=0.306, height=18, width=96)
 
         self.Label_status_amps.configure(activebackground="#f9f9f9")
         self.Label_status_amps.configure(text='''Amperes (mA):''')
+        #status_amps=setCurrent(100, 100)
 
         self.Label_status_duration = Label(self.Status_Frame)
         self.Label_status_duration.place(relx=0.058, rely=0.353, height=18
@@ -431,7 +437,7 @@ class GUI:
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(width=345)
 
-        self.Button_demag = Button(self.Frame_demag)
+        self.Button_demag = Button(self.Frame_demag, command=self.demagnet())
         self.Button_demag.place(relx=0.145, rely=0.323, height=58, width=240)
         self.Button_demag.configure(activebackground="#d9d9d9")
         self.Button_demag.configure(text='''Start Demagnetization Process''')
@@ -440,6 +446,9 @@ class GUI:
         self.Label1 = Label(self.Frame_demag)
         self.Label1.place(relx=0.145, rely=0.774, height=18, width=193)
         self.Label1.configure(text='''tkinter messagebox for popup''')
+
+    def demagnet(self):
+        print("Demagnetization in progress...")
 
     @staticmethod
     def popup1(event, *args, **kwargs):
