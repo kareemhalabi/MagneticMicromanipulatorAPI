@@ -440,6 +440,8 @@ class GUI:
         self.Label1.place(relx=0.145, rely=0.774, height=18, width=193)
         self.Label1.configure(text='''tkinter messagebox for popup''')
 
+    def getpos():
+
     @staticmethod
     def popup1(event, *args, **kwargs):
         Popupmenu1 = Menu(root, tearoff=0)
