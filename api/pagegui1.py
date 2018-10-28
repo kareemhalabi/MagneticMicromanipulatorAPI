@@ -50,7 +50,6 @@ def destroy_GUI():
     w = None
 
 
-
 class GUI:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
@@ -290,7 +289,7 @@ class GUI:
         self.Button_begin.place(relx=0.469, rely=0.105, height=26, width=125)
         self.Button_begin.configure(activebackground="#d9d9d9")
         self.Button_begin.configure(text='''Start Current''')
-        self.Button_begin.configure(command= setCurrent(self.Entry_amps.get(), self.Entry_duration.get()))
+        self.Button_begin.configure(command= lambda: setCurrent(self.Entry_amps.get(), self.Entry_duration.get()))
 
         self.Button_stop = Button(self.Current_Frame)
         self.Button_stop.place(relx=0.469, rely=0.211, height=26, width=119)
@@ -437,7 +436,11 @@ class GUI:
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(width=345)
 
-        self.Button_demag = Button(self.Frame_demag, command=self.demagnet())
+        def clicked():
+            print("Demagentization in progress...")
+            #self.Label_status_velocity.configure(text="Hello")
+
+        self.Button_demag = Button(self.Frame_demag)
         self.Button_demag.place(relx=0.145, rely=0.323, height=58, width=240)
         self.Button_demag.configure(activebackground="#d9d9d9")
         self.Button_demag.configure(text='''Start Demagnetization Process''')
@@ -446,9 +449,6 @@ class GUI:
         self.Label1 = Label(self.Frame_demag)
         self.Label1.place(relx=0.145, rely=0.774, height=18, width=193)
         self.Label1.configure(text='''tkinter messagebox for popup''')
-
-    def demagnet(self):
-        print("Demagnetization in progress...")
 
     @staticmethod
     def popup1(event, *args, **kwargs):
