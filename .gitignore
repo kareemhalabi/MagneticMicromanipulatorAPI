@@ -1,0 +1,11 @@
+
+*.xml
+*.iml
+*.idea
+*.xml
+.idea/libraries/R_User_Library.xml
+.idea/MagneticMicromanipulatorAPI.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+api/__pycache__/pagegui1_support.cpython-36.pyc
