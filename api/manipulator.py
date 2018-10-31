@@ -1,196 +1,198 @@
+from enum import Enum
+from typing import Tuple, Union, Sequence
+
 import serial
-
-manipulator = serial.Serial('COM7', timeout=None, write_timeout=None)
-
-# Default settings for Serial:
-#
-# manipulator.baudrate = 9600
-# manipulator.bytesize = EIGHTBITS
-# manipulator.parity = PARITY_NONE
-# manipulator.stopbits = STOPBITS_ONE
 
 _USTEPS_PER_UM_ = 25
 
-ABSOLUTE_MODE = b'a'
-RELATIVE_MODE = b'b'
 
-HIGH_RESOLUTION = 0  # 10 uSteps/step
-LOW_RESOLUTION = 1  # 50 uSteps/step
-
-
-def get_current_position():
-    """
-    Get the micromanipulator position
-    :return: A tuple of floats (x,y,z) of the position in um accurate to 0.04 um
-    """
-    manipulator.write(b'c\r')
-
-    # returns 'xxxxyyyyzzzzCR' in uSteps
-    position_bytes = manipulator.read(13)
-
-    x = int.from_bytes(position_bytes[0:4], byteorder='little', signed=True)
-    y = int.from_bytes(position_bytes[4:8], byteorder='little', signed=True)
-    z = int.from_bytes(position_bytes[8:12], byteorder='little', signed=True)
-
-    return float(x / _USTEPS_PER_UM_), float(y / _USTEPS_PER_UM_), float(z / _USTEPS_PER_UM_)
+class Mode(Enum):
+    ABSOLUTE_MODE = b'a'
+    RELATIVE_MODE = b'b'
 
 
-def go_to_position(x, y, z):
-    """
-    Direct the micromanipulator to a position within an accuracy of 0.04 um
-
-    :param x: X coordinate in um
-    :param y: Y coordinate in um
-    :param z: Z coordinate in um
-    """
-
-    x_bytes = int(x * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
-    y_bytes = int(y * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
-    z_bytes = int(z * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
-
-    manipulator.write(b'm' + x_bytes + y_bytes + z_bytes + b'\r')
-
-    # Wait for response
-    manipulator.read()
+class Resolution(Enum):
+    LOW = 0  # 10 uSteps/step
+    HIGH = 1  # 50 uSteps/step
 
 
-def set_velocity(velocity, resolution):
-    """
-    Set the velocity of the manipulator. Two resolutions are available:
-
-    HIGH_RESOLUTION allows for increments of 0.4um/second with max velocity of 13106.8 um/second
-    LOW_RESOLUTION allows for increments of 2um/second with max velocity of 65534 um/second
-
-    :param velocity: velocity value in um/second
-    :param resolution: Resolution either HIGH_RESOLUTION (0.4um/second) or LOW_RESOLUTION (2um/second)
-    """
-
-    #TODO Verify units of velocity
-
-    if velocity <= 0:
-        raise ValueError('Velocity must be positive')
-
-    if resolution == HIGH_RESOLUTION:
-        steps = int((velocity * _USTEPS_PER_UM_) / 10)
-    elif resolution == LOW_RESOLUTION:
-        steps = int((velocity * _USTEPS_PER_UM_) / 50)
-    else:
-        raise ValueError('Use either HIGH_RESOLUTION or LOW_RESOLUTION')
-
-    steps = (resolution << 15) | steps
-
-    manipulator.write(b'V' + steps.to_bytes(2, 'little') + b'\r')
-
-    # Wait for response
-    manipulator.read()
+_Num = Union[int, float]
 
 
-def set_origin():
-    """
-    Sets the origin of the manipulator
-    """
-    manipulator.write(b'o\r')
+class Maipulator:
 
-    # Wait for response
-    manipulator.read()
+    def __init__(self, comm_port: str):
 
+        self.serial_conn = serial.Serial(comm_port, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                                         stopbits=serial.STOPBITS_ONE)
 
-def refresh_display():
-    """
-    Refreshes the display on the manipulator
-    """
-    manipulator.write(b'n\r')
+    def __del__(self):
+        self.serial_conn.close()
 
-    # Wait for response
-    manipulator.read()
+    def get_current_position(self):
+        """
+        Get the micromanipulator position
+        :return: A tuple of floats (x,y,z) of the position in um accurate to 0.04 um
+        """
+        self.serial_conn.write(b'c\r')
 
+        # returns 'xxxxyyyyzzzzCR' in uSteps
+        position_bytes = self.serial_conn.read(13)
 
-def set_mode(mode):
-    """
-    Sets the mode of the manipulator
-    :param mode: options are ABSOLUTE or RELATIVE
-    """
+        x = int.from_bytes(position_bytes[0:4], byteorder='little', signed=True)
+        y = int.from_bytes(position_bytes[4:8], byteorder='little', signed=True)
+        z = int.from_bytes(position_bytes[8:12], byteorder='little', signed=True)
 
-    if mode != ABSOLUTE_MODE and mode != RELATIVE_MODE:
-        raise ValueError('Use either ABSOLUTE_MODE or RELATIVE_MODE')
+        return float(x / _USTEPS_PER_UM_), float(y / _USTEPS_PER_UM_), float(z / _USTEPS_PER_UM_)
 
-    manipulator.write(mode + b'\r')
+    def go_to_position(self, x: _Num, y: _Num, z: _Num):
+        """
+        Direct the micromanipulator to a position within an accuracy of 0.04 um
 
-    # Wait for response
-    manipulator.read()
+        :param x: X coordinate in um
+        :param y: Y coordinate in um
+        :param z: Z coordinate in um
+        """
 
+        x_bytes = int(x * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
+        y_bytes = int(y * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
+        z_bytes = int(z * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
 
-def interrupt():
-    """
-    Interrupts the manipulator
-    """
-    manipulator.write(hex(3))
+        self.serial_conn.write(b'm' + x_bytes + y_bytes + z_bytes + b'\r')
 
-    # Wait for response
-    manipulator.read()
+        # Wait for response
+        self.serial_conn.read()
 
+    def set_velocity(self, velocity: _Num, resolution: Resolution):
+        """
+        Set the velocity of the manipulator. Two resolutions are available:
 
-def continue_operation():
-    """
-    Resumes an operation on the manipulator
-    """
-    manipulator.write(b'e\r')
+        HIGH_RESOLUTION allows for increments of 0.4um/second with max velocity of 1310 um/s
 
-    # Wait for response
-    manipulator.read()
+        LOW_RESOLUTION allows for increments of 2um/second with max velocity of 6500 um/s(recommended maximum 3000 um/s)
 
+        :param velocity: velocity value in um/second
+        :param resolution: Resolution either HIGH_RESOLUTION (0.4um/second) or LOW_RESOLUTION (2um/second)
+        """
 
-def reset():
-    """
-    Resets the manipulator. No value is returned from the manipulator
-    """
-    manipulator.write(b'r\r')
+        if velocity <= 0:
+            raise ValueError('Velocity must be positive')
 
+        if resolution == Resolution.HIGH:
+            steps = int((velocity * _USTEPS_PER_UM_) / 50)
+        elif resolution == Resolution.LOW:
+            steps = int((velocity * _USTEPS_PER_UM_) / 10)
+        else:
+            raise ValueError('Use either HIGH_RESOLUTION or LOW_RESOLUTION')
 
-def get_status():
+        steps = (resolution.value << 15) | steps
 
-    manipulator.write(b's\r')
+        self.serial_conn.write(b'V' + steps.to_bytes(2, 'little') + b'\r')
 
-    status_bytes = manipulator.read(33)
+        # Wait for response
+        self.serial_conn.read()
 
-    flag_byte = int.from_bytes(status_bytes[0], byteorder='little')
-    flag_2_byte = int.from_bytes(status_bytes[15], byteorder='little')
+    def set_origin(self):
+        """
+        Sets the origin of the manipulator
+        """
+        self.serial_conn.write(b'o\r')
 
-    return {
-        'FLAGS': {
-            'SETUP': flag_byte & 0b00001111,
-            'ROE_DIR': 'Negative' if (flag_byte & (1<<4)) == (1<<4) else 'Positive',
-            'REL_ABS_F': 'Absolute' if (flag_byte & (1<<5)) == (1<<5) else 'Relative',
-            'MODE_F': 'Continuous' if (flag_byte & (1<<6)) == (1<<6) else 'Pulse',
-            'STORE_F': 'Stored' if (flag_byte & (1<<7)) == (1<<7) else 'Erased'
-        },
-        'UDIRX': int.from_bytes(status_bytes[1], byteorder='little'),
-        'UDIRY': int.from_bytes(status_bytes[2], byteorder='little'),
-        'UDIRZ': int.from_bytes(status_bytes[3], byteorder='little'),
-        'ROE_VARI': int.from_bytes(status_bytes[4:6], byteorder='little'),
-        'UOFFSET': int.from_bytes(status_bytes[6:8], byteorder='little'),
-        'URANGE': int.from_bytes(status_bytes[8:10], byteorder='little'),
-        'PULSE': int.from_bytes(status_bytes[10:12], byteorder='little'),
-        'USPEED': int.from_bytes(status_bytes[12:14], byteorder='little'),
-        'INDEVICE': int.from_bytes(status_bytes[14], byteorder='little'),
-        'FLAGS_2': {
-            'LOOP_MODE': 'Loop' if (flag_2_byte & (1<<0)) == (1<<0) else 'Execute Once',
-            'LEARN_MODE': 'Learning' if (flag_2_byte & (1<<1)) == (1<<1) else 'Not Learning',
-            'STEP_MODE': '50 usteps/step' if (flag_2_byte & (1<<2)) == (1<<2) else '10 usteps/step',
-            'JOYSTICK_SIDE': 'Enabled' if (flag_2_byte & (1<<3)) == (1<<3) else 'Disabled',        # SW2_MODE
-            'ENABLE_JOYSTICK': 'Enabled' if (flag_2_byte & (1<<4)) == (1<<4) else 'Keypad',        # SW1_MODE
-            'ENABLE_ROE_SWITCH': 'Enabled' if (flag_2_byte & (1<<5)) == (1<<5) else 'Disabled',    # SW3_MODE
-            '4_AND_5_SWITCHES': 'Enabled' if (flag_2_byte & (1<<6)) == (1<<6) else 'Disabled',     # SW4_MODE
-            'REVERSE_IT': 'Reversed' if (flag_2_byte & (1<<7)) == (1<<7) else 'Normal Sequence'
-        },
-        'JUMPSPD': int.from_bytes(status_bytes[16:18], byteorder='little'),
-        'HIGHSPD': int.from_bytes(status_bytes[18:20], byteorder='little'),
-        'DEAD': int.from_bytes(status_bytes[20:22], byteorder='little'),
-        # Could be a typo in the manual as to why both DEAD and WATCH_DOG cover the same range of bytes
-        'WATCH_DOG': int.from_bytes(status_bytes[20:22], byteorder='little'),
-        'STEP_DIV': int.from_bytes(status_bytes[22:24], byteorder='little'),
-        'STEP_MUL': int.from_bytes(status_bytes[24:26], byteorder='little'),
-        'XSPEED_RES': 'Low Resolution' if (int.from_bytes(status_bytes[26:28], byteorder='little') & (1<<15)) == (1<<15) else 'High Resolution',
-        'XSPEED': int.from_bytes(status_bytes[26:28], byteorder='little') & ~(1<<15),
-        'VERSION': int.from_bytes(status_bytes[28:30], byteorder='little')
-    }
+        # Wait for response
+        self.serial_conn.read()
+
+    def refresh_display(self):
+        """
+        Refreshes the display on the manipulator
+        """
+        self.serial_conn.write(b'n\r')
+
+        # Wait for response
+        self.serial_conn.read()
+
+    def set_mode(self, mode: Mode):
+        """
+        Sets the mode of the manipulator
+        :param mode: options are ABSOLUTE or RELATIVE
+        """
+
+        self.serial_conn.write(mode.value + b'\r')
+
+        # Wait for response
+        self.serial_conn.read()
+
+    def interrupt(self):
+        """
+        Interrupts the manipulator
+        """
+        self.serial_conn.write(hex(3))
+
+        # Wait for response
+        self.serial_conn.read()
+
+    def continue_operation(self):
+        """
+        Resumes an operation on the manipulator
+        """
+        self.serial_conn.write(b'e\r')
+
+        # Wait for response
+        self.serial_conn.read()
+
+    def reset(self):
+        """
+        Resets the manipulator. No value is returned from the manipulator
+        """
+        self.serial_conn.write(b'r\r')
+
+    def get_status(self):
+        """
+        Returns a dict containing all status information from the mainpulator
+
+        :return: Dict of all status information
+        """
+        self.serial_conn.write(b's\r')
+
+        status_bytes = self.serial_conn.read(33)
+
+        flag_byte = status_bytes[0]
+        flag_2_byte = status_bytes[15]
+
+        return {
+            'FLAGS': {
+                'SETUP': flag_byte & 0b00001111,
+                'ROE_DIR': 'Negative' if (flag_byte & (1 << 4)) == (1 << 4) else 'Positive',
+                'REL_ABS_F': 'Absolute' if (flag_byte & (1 << 5)) == (1 << 5) else 'Relative',
+                'MODE_F': 'Continuous' if (flag_byte & (1 << 6)) == (1 << 6) else 'Pulse',
+                'STORE_F': 'Stored' if (flag_byte & (1 << 7)) == (1 << 7) else 'Erased'
+            },
+            'UDIRX': status_bytes[1],
+            'UDIRY': status_bytes[2],
+            'UDIRZ': status_bytes[3],
+            'ROE_VARI': int.from_bytes(status_bytes[4:6], byteorder='little'),
+            'UOFFSET': int.from_bytes(status_bytes[6:8], byteorder='little'),
+            'URANGE': int.from_bytes(status_bytes[8:10], byteorder='little'),
+            'PULSE': int.from_bytes(status_bytes[10:12], byteorder='little'),
+            'USPEED': int.from_bytes(status_bytes[12:14], byteorder='little'),
+            'INDEVICE': status_bytes[14],
+            'FLAGS_2': {
+                'LOOP_MODE': 'Loop' if (flag_2_byte & (1 << 0)) == (1 << 0) else 'Execute Once',
+                'LEARN_MODE': 'Learning' if (flag_2_byte & (1 << 1)) == (1 << 1) else 'Not Learning',
+                'STEP_MODE': '50 usteps/step' if (flag_2_byte & (1 << 2)) == (1 << 2) else '10 usteps/step',
+                'JOYSTICK_SIDE': 'Enabled' if (flag_2_byte & (1 << 3)) == (1 << 3) else 'Disabled',  # SW2_MODE
+                'ENABLE_JOYSTICK': 'Enabled' if (flag_2_byte & (1 << 4)) == (1 << 4) else 'Keypad',  # SW1_MODE
+                'ENABLE_ROE_SWITCH': 'Enabled' if (flag_2_byte & (1 << 5)) == (1 << 5) else 'Disabled',  # SW3_MODE
+                '4_AND_5_SWITCHES': 'Enabled' if (flag_2_byte & (1 << 6)) == (1 << 6) else 'Disabled',  # SW4_MODE
+                'REVERSE_IT': 'Reversed' if (flag_2_byte & (1 << 7)) == (1 << 7) else 'Normal Sequence'
+            },
+            'JUMPSPD': int.from_bytes(status_bytes[16:18], byteorder='little'),
+            'HIGHSPD': int.from_bytes(status_bytes[18:20], byteorder='little'),
+            'DEAD': int.from_bytes(status_bytes[20:22], byteorder='little'),
+            'WATCH_DOG': int.from_bytes(status_bytes[22:24], byteorder='little'),
+            'STEP_DIV': int.from_bytes(status_bytes[24:26], byteorder='little'),
+            'STEP_MUL': int.from_bytes(status_bytes[26:28], byteorder='little'),
+            'XSPEED_RES': 'Low Resolution' if (int.from_bytes(status_bytes[28:30], byteorder='little') & (1 << 15)) == (
+                    1 << 15) else 'High Resolution',
+            'XSPEED': int.from_bytes(status_bytes[28:30], byteorder='little') & ~(1 << 15),
+            'VERSION': status_bytes[30:32]  # TODO Bytes 31 and 32 Could be integer or Binary Coded decimal
+        }
