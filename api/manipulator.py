@@ -63,6 +63,45 @@ class Maipulator:
         # Wait for response
         self.serial_conn.read()
 
+    def send_and_execute_moves(self, moves: Sequence[Tuple[_Num, _Num, _Num]], program_num: int = 1):
+        """
+        Sends and executes a sequence of moves on the manipulator. (Max 99 moves at a time)
+
+        :param moves: List of (x, y, z) coordinates in um
+        :param program_num: Optional program number between 1 and 10
+        """
+
+        if len(moves) > 99:
+            raise ValueError('Maximum number of moves exceed. Limit is 99')
+
+        if not (1 <= program_num <= 10):
+            raise ValueError('Program number must be between 1 and 10')
+
+        # Header information:
+        # Command is 'd' followed by the program number followed by the number of moves
+        byte_str = b'd' + program_num.to_bytes(1, byteorder='little', signed=False) \
+                   + len(moves).to_bytes(1, byteorder='little', signed=False)
+
+        for move in moves:
+            x_bytes = int(move[0] * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
+            y_bytes = int(move[1] * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
+            z_bytes = int(move[2] * _USTEPS_PER_UM_).to_bytes(4, byteorder='little', signed=True)
+            byte_str += x_bytes + y_bytes + z_bytes
+
+        byte_str += b'\r'
+
+        # Send program
+        self.serial_conn.write(byte_str)
+
+        # Wait for confirmation
+        self.serial_conn.read()
+
+        # Execute program (Command 'k')
+        self.serial_conn.write(b'k' + program_num.to_bytes(1, byteorder='little', signed=False) + b'\r')
+
+        # Wait for completion
+        self.serial_conn.read()
+
     def set_velocity(self, velocity: _Num, resolution: Resolution):
         """
         Set the velocity of the manipulator. Two resolutions are available:
