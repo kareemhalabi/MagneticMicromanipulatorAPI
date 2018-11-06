@@ -77,8 +77,52 @@ class GUI:
         top.configure(menu = self.menubar)
 
         def demagnetization():
-            self.console_output.insert(1.0, "SOME TEXT1\n")
-            self.console_output.insert(1.0, "SOME TEXT2\n")
+            self.console_output.insert(1.0, "Demagnetization in progres...\n")
+            #TODO demagnetization call
+            self.console_output.insert(1.0, "Demagnetization complete\n")
+
+        def status_refresh():
+            #TODO Refresh all value labels (mm.getstatus, mm.getposition)
+            self.console_output.insert(1.0, "Status page refreshed\n")
+
+        def go_to_position():
+            self.Button_gtp.configure(state="disabled")
+            x = gui_support.gtp_x.get()
+            y = gui_support.gtp_y.get()
+            z = gui_support.gtp_z.get()
+            self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
+            #TODO call manipulator instance go to position function
+            self.console_output.insert(1.0, "Moving complete\n")
+            self.Button_gtp.configure(state="normal")
+
+        def step_x():
+            x = gui_support.step_x.get()
+            self.console_output.insert(1.0, "Moving by "+x+"x\n")
+            #TODO call manipulator instance go to position function
+            self.console_output.insert(1.0, "Moving complete\n")
+
+        def step_y():
+            y = gui_support.step_y.get()
+            self.console_output.insert(1.0, "Moving by "+y+"y\n")
+            #TODO call manipulator instance go to position function
+            self.console_output.insert(1.0, "Moving complete\n")
+
+        def step_z():
+            z = gui_support.step_z.get()
+            self.console_output.insert(1.0, "Moving by "+z+"z\n")
+            #TODO call manipulator instance go to position function
+            self.console_output.insert(1.0, "Moving complete\n")
+
+        def change_velocity():
+            vel = gui_support.velocity.get()
+            self.console_output.insert(1.0, "Changing velocity to " + vel + "um/s\n")
+            #TODO mm.change velocity
+            self.console_output.insert(1.0, "Changed velocity\n")
+
+        def disable_interface():
+            #TODO disable all user interaction (buttons). Typically used when waiting for a mm move to finish
+            '''does this work'''
+
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
@@ -118,12 +162,12 @@ class GUI:
         self.Entry_gtp_z.configure(selectbackground="#c4c4c4")
         self.Entry_gtp_z.configure(textvariable=gui_support.gtp_z)
 
-        self.Button_gtp = Button(self.MM_Frame)
+        self.Button_gtp = Button(self.MM_Frame, command=lambda:go_to_position())
         self.Button_gtp.place(relx=0.049, rely=0.203, height=26, width=149)
         self.Button_gtp.configure(activebackground="#d9d9d9")
         self.Button_gtp.configure(text='''Go To Position (um)''')
 
-        self.Button_step_x = Button(self.MM_Frame)
+        self.Button_step_x = Button(self.MM_Frame, command=lambda:step_x())
         self.Button_step_x.place(relx=0.198, rely=0.508, height=26, width=32)
         self.Button_step_x.configure(activebackground="#d9d9d9")
         self.Button_step_x.configure(text='''x''')
@@ -133,12 +177,12 @@ class GUI:
         self.Label_step.configure(activebackground="#f9f9f9")
         self.Label_step.configure(text='''Step (um)''')
 
-        self.Button_step_y = Button(self.MM_Frame)
+        self.Button_step_y = Button(self.MM_Frame, command=lambda: step_y())
         self.Button_step_y.place(relx=0.198, rely=0.61, height=26, width=32)
         self.Button_step_y.configure(activebackground="#d9d9d9")
         self.Button_step_y.configure(text='''y''')
 
-        self.Button_step_z = Button(self.MM_Frame)
+        self.Button_step_z = Button(self.MM_Frame, command=lambda: step_z())
         self.Button_step_z.place(relx=0.198, rely=0.712, height=26, width=32)
         self.Button_step_z.configure(activebackground="#d9d9d9")
         self.Button_step_z.configure(text='''z''')
