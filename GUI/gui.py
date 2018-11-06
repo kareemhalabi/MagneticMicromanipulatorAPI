@@ -579,7 +579,7 @@ class Controller():
         self.gui_instance=gui_instance
         self.man_instance=man_instance
 
-    def refresh(self):
+    def status_refresh(self):
         curPos=self.man_instance.get_current_position(self.man_instance)
         gui_support.status_pos=curPos   #Update Position
         gui_support.status_res_v=gui_support.velocity   #Update velocity - Can set status label to entry label (Instant Update)?
