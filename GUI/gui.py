@@ -67,7 +67,7 @@ class GUI:
         self.style.map('.',background=
             [('selected', _compcolor), ('active',_ana2color)])
 
-        top.geometry("758x629+156+48")
+        top.geometry("758x629+162+74")
         top.title("GUI")
         top.configure(highlightcolor="black")
 
@@ -77,11 +77,8 @@ class GUI:
         top.configure(menu = self.menubar)
 
         def demagnetization():
-            gui_support.status_magfield_v.set("100")
-            gui_support.status_pos_v.set("100")
-            gui_support.status_posmode_v.set("100")
-            gui_support.status_magfield_v.set("100")
-            self.Label_Manipulator.configure(text="AKAMNDSKL")
+            self.console_output.insert(1.0, "SOME TEXT1\n")
+            self.console_output.insert(1.0, "SOME TEXT2\n")
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
@@ -482,7 +479,7 @@ class GUI:
         self.Label_status_vel.place(relx=0.058, rely=0.141, height=18, width=107)
 
         self.Label_status_vel.configure(activebackground="#f9f9f9")
-        self.Label_status_vel.configure(text='''Velocity (units?):''')
+        self.Label_status_vel.configure(text='''Velocity (um/s):''')
 
         self.Label_status_magfield = Label(self.Status_Frame)
         self.Label_status_magfield.place(relx=0.058, rely=0.235, height=18
@@ -491,20 +488,9 @@ class GUI:
         self.Label_status_magfield.configure(text='''Magnetic Field:''')
 
         self.Label_console = Label(self.Status_Frame)
-        self.Label_console.place(relx=0.058, rely=0.635, height=18, width=101)
+        self.Label_console.place(relx=0.058, rely=0.535, height=18, width=101)
         self.Label_console.configure(activebackground="#f9f9f9")
         self.Label_console.configure(text='''Console Output''')
-
-        self.Message_console = Message(self.Status_Frame)
-        self.Message_console.place(relx=0.058, rely=0.682, relheight=0.212
-                                   , relwidth=0.893)
-        self.Message_console.configure(anchor=NW)
-        self.Message_console.configure(background="#ffffff")
-        self.Message_console.configure(highlightbackground="#d8d8d8")
-        self.Message_console.configure(relief=SUNKEN)
-        self.Message_console.configure(text='''Messages''')
-        self.Message_console.configure(textvariable=gui_support.console_output)
-        self.Message_console.configure(width=308)
 
         self.Label_status_pos_v = Label(self.Status_Frame)
         self.Label_status_pos_v.place(relx=0.348, rely=0.094, height=18
@@ -515,7 +501,7 @@ class GUI:
         self.Label_status_pos_v.configure(textvariable=gui_support.status_pos_v)
 
         self.Label_status_vel_v = Label(self.Status_Frame)
-        self.Label_status_vel_v.place(relx=0.406, rely=0.141, height=18
+        self.Label_status_vel_v.place(relx=0.377, rely=0.141, height=18
                                       , width=39)
         self.Label_status_vel_v.configure(activebackground="#f9f9f9")
         self.Label_status_vel_v.configure(justify=LEFT)
@@ -552,6 +538,16 @@ class GUI:
         self.Button_master_stop.configure(foreground="#ff0000")
         self.Button_master_stop.configure(text='''STOP ALL''')
 
+        self.console_output = ScrolledText(self.Status_Frame)
+        self.console_output.place(relx=0.029, rely=0.588, relheight=0.325
+                                  , relwidth=0.951)
+        self.console_output.configure(background="white")
+        self.console_output.configure(font="TkTextFont")
+        self.console_output.configure(insertborderwidth="3")
+        self.console_output.configure(selectbackground="#c4c4c4")
+        self.console_output.configure(width=10)
+        self.console_output.configure(wrap=NONE)
+
         self.Frame_demag = Frame(top)
         self.Frame_demag.place(relx=0.541, rely=0.684, relheight=0.31
                                , relwidth=0.455)
@@ -583,6 +579,80 @@ class Controller():
 
 
 
+# The following code is added to facilitate the Scrolled widgets you specified.
+class AutoScroll(object):
+    '''Configure the scrollbars for a widget.'''
+
+    def __init__(self, master):
+        #  Rozen. Added the try-except clauses so that this class
+        #  could be used for scrolled entry widget for which vertical
+        #  scrolling is not supported. 5/7/14.
+        try:
+            vsb = ttk.Scrollbar(master, orient='vertical', command=self.yview)
+        except:
+            pass
+        hsb = ttk.Scrollbar(master, orient='horizontal', command=self.xview)
+
+        #self.configure(yscrollcommand=_autoscroll(vsb),
+        #    xscrollcommand=_autoscroll(hsb))
+        try:
+            self.configure(yscrollcommand=self._autoscroll(vsb))
+        except:
+            pass
+        self.configure(xscrollcommand=self._autoscroll(hsb))
+
+        self.grid(column=0, row=0, sticky='nsew')
+        try:
+            vsb.grid(column=1, row=0, sticky='ns')
+        except:
+            pass
+        hsb.grid(column=0, row=1, sticky='ew')
+
+        master.grid_columnconfigure(0, weight=1)
+        master.grid_rowconfigure(0, weight=1)
+
+        # Copy geometry methods of master  (taken from ScrolledText.py)
+        if py3:
+            methods = Pack.__dict__.keys() | Grid.__dict__.keys() \
+                  | Place.__dict__.keys()
+        else:
+            methods = Pack.__dict__.keys() + Grid.__dict__.keys() \
+                  + Place.__dict__.keys()
+
+        for meth in methods:
+            if meth[0] != '_' and meth not in ('config', 'configure'):
+                setattr(self, meth, getattr(master, meth))
+
+    @staticmethod
+    def _autoscroll(sbar):
+        '''Hide and show scrollbar as needed.'''
+        def wrapped(first, last):
+            first, last = float(first), float(last)
+            if first <= 0 and last >= 1:
+                sbar.grid_remove()
+            else:
+                sbar.grid()
+            sbar.set(first, last)
+        return wrapped
+
+    def __str__(self):
+        return str(self.master)
+
+def _create_container(func):
+    '''Creates a ttk Frame with a given master, and use this new frame to
+    place the scrollbars and the widget.'''
+    def wrapped(cls, master, **kw):
+        container = ttk.Frame(master)
+        return func(cls, container, **kw)
+    return wrapped
+
+class ScrolledText(AutoScroll, Text):
+    '''A standard Tkinter Text widget with scrollbars that will
+    automatically show/hide as needed.'''
+    @_create_container
+    def __init__(self, master, **kw):
+        Text.__init__(self, master, **kw)
+        AutoScroll.__init__(self, master)
 
 if __name__ == '__main__':
     vp_start_gui()
