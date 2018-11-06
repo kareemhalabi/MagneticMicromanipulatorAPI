@@ -10,3 +10,5 @@
 .idea/vcs.xml
 api/__pycache__/pagegui1_support.cpython-36.pyc
 *.pyc
+venv
+*.pth
