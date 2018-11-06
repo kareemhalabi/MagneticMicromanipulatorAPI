@@ -563,7 +563,14 @@ class GUI:
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(width=345)
 
-        self.Button_demag = Button(self.Frame_demag)
+        def demagnetization():
+            gui_support.status_magfield_v.set("100")
+            gui_support.status_pos_v.set("100")
+            gui_support.status_posmode_v.set("100")
+            gui_support.status_magfield_v.set("100")
+
+
+        self.Button_demag = Button(self.Frame_demag, command=demagnetization)
         self.Button_demag.place(relx=0.145, rely=0.256, height=58, width=240)
         self.Button_demag.configure(activebackground="#d9d9d9")
         self.Button_demag.configure(text='''Start Demagnetization Process''')
@@ -583,7 +590,6 @@ class Controller():
         curPos=self.man_instance.get_current_position(self.man_instance)
         gui_support.status_pos=curPos   #Update Position
         gui_support.status_res_v=gui_support.velocity   #Update velocity - Can set status label to entry label (Instant Update)?
-
 
 
 
