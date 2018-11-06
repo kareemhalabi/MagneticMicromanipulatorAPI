@@ -5,6 +5,7 @@
 # In conjunction with Tcl version 8.6
 #    Oct 31, 2018 02:59:25 AM EDT  platform: Linux
 #    Nov 05, 2018 02:38:50 AM EST  platform: Linux
+#    Nov 06, 2018 12:33:12 AM EST  platform: Linux
 
 import sys
 
@@ -73,6 +74,10 @@ def set_Tk_var():
     sin_duration = StringVar()
     global status_pos_v
     status_pos_v = StringVar()
+    global gtp_z
+    gtp_z = StringVar()
+    global console_output
+    console_output = StringVar()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
@@ -89,8 +94,3 @@ def destroy_window():
 if __name__ == '__main__':
     import gui
     gui.vp_start_gui()
-
-
-
-
-

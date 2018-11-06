@@ -76,7 +76,12 @@ class GUI:
         self.menubar = Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
         top.configure(menu = self.menubar)
 
-
+        def demagnetization():
+            gui_support.status_magfield_v.set("100")
+            gui_support.status_pos_v.set("100")
+            gui_support.status_posmode_v.set("100")
+            gui_support.status_magfield_v.set("100")
+            self.Label_Manipulator.configure(text="AKAMNDSKL")
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
@@ -95,7 +100,7 @@ class GUI:
 
         self.Label_Manipulator = Label(self.MM_Frame)
         self.Label_Manipulator.place(relx=0.049, rely=0.034, height=28
-                , width=136)
+                                     , width=136)
         self.Label_Manipulator.configure(activebackground="#f9f9f9")
         self.Label_Manipulator.configure(font=font9)
         self.Label_Manipulator.configure(text='''Micromanipulator''')
@@ -114,7 +119,7 @@ class GUI:
         self.Entry_gtp_z.configure(background="white")
         self.Entry_gtp_z.configure(font="TkFixedFont")
         self.Entry_gtp_z.configure(selectbackground="#c4c4c4")
-        self.Entry_gtp_z.configure(textvariable=gui_support.gtp__z)
+        self.Entry_gtp_z.configure(textvariable=gui_support.gtp_z)
 
         self.Button_gtp = Button(self.MM_Frame)
         self.Button_gtp.place(relx=0.049, rely=0.203, height=26, width=149)
@@ -153,7 +158,7 @@ class GUI:
 
         self.Entry_velocity = Entry(self.MM_Frame)
         self.Entry_velocity.place(relx=0.815, rely=0.441, height=20
-                , relwidth=0.138)
+                                  , relwidth=0.138)
         self.Entry_velocity.configure(background="white")
         self.Entry_velocity.configure(font="TkFixedFont")
         self.Entry_velocity.configure(selectbackground="#c4c4c4")
@@ -161,7 +166,7 @@ class GUI:
 
         self.Spinbox_step_x = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
         self.Spinbox_step_x.place(relx=0.099, rely=0.508, relheight=0.068
-                , relwidth=0.094)
+                                  , relwidth=0.094)
         self.Spinbox_step_x.configure(activebackground="#f9f9f9")
         self.Spinbox_step_x.configure(background="white")
         self.Spinbox_step_x.configure(from_="-50.0")
@@ -172,7 +177,7 @@ class GUI:
 
         self.Spinbox_step_z = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
         self.Spinbox_step_z.place(relx=0.099, rely=0.712, relheight=0.068
-                , relwidth=0.094)
+                                  , relwidth=0.094)
         self.Spinbox_step_z.configure(activebackground="#f9f9f9")
         self.Spinbox_step_z.configure(background="white")
         self.Spinbox_step_z.configure(from_="-50.0")
@@ -183,7 +188,7 @@ class GUI:
 
         self.Spinbox_step_y = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
         self.Spinbox_step_y.place(relx=0.099, rely=0.61, relheight=0.068
-                , relwidth=0.094)
+                                  , relwidth=0.094)
         self.Spinbox_step_y.configure(activebackground="#f9f9f9")
         self.Spinbox_step_y.configure(background="white")
         self.Spinbox_step_y.configure(from_="-50.0")
@@ -194,7 +199,7 @@ class GUI:
 
         self.Radiobutton_highres = Radiobutton(self.MM_Frame)
         self.Radiobutton_highres.place(relx=0.42, rely=0.576, relheight=0.068
-                , relwidth=0.311)
+                                       , relwidth=0.311)
         self.Radiobutton_highres.configure(activebackground="#d9d9d9")
         self.Radiobutton_highres.configure(justify=LEFT)
         self.Radiobutton_highres.configure(text='''High Resolution''')
@@ -203,7 +208,7 @@ class GUI:
 
         self.Radiobutton_lowres = Radiobutton(self.MM_Frame)
         self.Radiobutton_lowres.place(relx=0.42, rely=0.644, relheight=0.068
-                , relwidth=0.299)
+                                      , relwidth=0.299)
         self.Radiobutton_lowres.configure(activebackground="#d9d9d9")
         self.Radiobutton_lowres.configure(justify=LEFT)
         self.Radiobutton_lowres.configure(text='''Low Resolution''')
@@ -212,26 +217,27 @@ class GUI:
 
         self.Button_mm_interrupt = Button(self.MM_Frame)
         self.Button_mm_interrupt.place(relx=0.765, rely=0.881, height=26
-                , width=81)
+                                       , width=81)
         self.Button_mm_interrupt.configure(activebackground="#d9d9d9")
         self.Button_mm_interrupt.configure(state=ACTIVE)
         self.Button_mm_interrupt.configure(text='''Interrupt''')
 
         self.Label_pathing = Label(self.MM_Frame)
         self.Label_pathing.place(relx=0.519, rely=0.136, height=18, width=110)
+        self.Label_pathing.configure(activebackground="#f9f9f9")
         self.Label_pathing.configure(text='''Pathing Function''')
 
         self.Entry_pathing_func = Entry(self.MM_Frame)
         self.Entry_pathing_func.place(relx=0.568, rely=0.203, height=20
-                , relwidth=0.336)
+                                      , relwidth=0.336)
         self.Entry_pathing_func.configure(background="white")
         self.Entry_pathing_func.configure(font="TkFixedFont")
+        self.Entry_pathing_func.configure(selectbackground="#c4c4c4")
         self.Entry_pathing_func.configure(textvariable=gui_support.pathing_func)
-        self.Entry_pathing_func.configure(width=136)
 
         self.Current_Frame = Frame(top)
         self.Current_Frame.place(relx=0.0, rely=0.477, relheight=0.517
-                , relwidth=0.534)
+                                 , relwidth=0.534)
         self.Current_Frame.configure(relief=RAISED)
         self.Current_Frame.configure(borderwidth="2")
         self.Current_Frame.configure(relief=RAISED)
@@ -245,43 +251,43 @@ class GUI:
 
         self.Button_ps_interrupt = Button(self.Current_Frame)
         self.Button_ps_interrupt.place(relx=0.765, rely=0.862, height=26
-                , width=81)
+                                       , width=81)
         self.Button_ps_interrupt.configure(activebackground="#d9d9d9")
         self.Button_ps_interrupt.configure(text='''Interrupt''')
 
         self.style.configure('TNotebook.Tab', background=_bgcolor)
         self.style.configure('TNotebook.Tab', foreground=_fgcolor)
         self.style.map('TNotebook.Tab', background=
-            [('selected', _compcolor), ('active',_ana2color)])
+        [('selected', _compcolor), ('active', _ana2color)])
         self.Notebook_ps = ttk.Notebook(self.Current_Frame)
         self.Notebook_ps.place(relx=0.025, rely=0.123, relheight=0.686
-                , relwidth=0.919)
+                               , relwidth=0.919)
         self.Notebook_ps.configure(width=372)
         self.Notebook_ps.configure(takefocus="")
         self.Notebook_ps_t0 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t0, padding=3)
         self.Notebook_ps.tab(0, text="Constant", compound="left", underline="-1"
-                ,)
+                             , )
         self.Notebook_ps_t1 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t1, padding=3)
-        self.Notebook_ps.tab(1, text="Square",compound="left",underline="-1",)
+        self.Notebook_ps.tab(1, text="Square", compound="left", underline="-1", )
         self.Notebook_ps_t2 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t2, padding=3)
-        self.Notebook_ps.tab(2, text="Custom",compound="left",underline="-1",)
+        self.Notebook_ps.tab(2, text="Custom", compound="left", underline="-1", )
         self.Notebook_ps_t3 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t3, padding=3)
         self.Notebook_ps.tab(3, text="Sinusoidal", compound="left", underline="-1"
-                ,)
+                             , )
 
         self.Label_constant_amps = Label(self.Notebook_ps_t0)
         self.Label_constant_amps.place(relx=0.027, rely=0.05, height=18
-                , width=92)
+                                       , width=92)
         self.Label_constant_amps.configure(activebackground="#f9f9f9")
         self.Label_constant_amps.configure(text='''Amperes (mA)''')
 
         self.Entry_constant_amps = Entry(self.Notebook_ps_t0)
         self.Entry_constant_amps.place(relx=0.297, rely=0.05, height=20
-                , relwidth=0.124)
+                                       , relwidth=0.124)
         self.Entry_constant_amps.configure(background="white")
         self.Entry_constant_amps.configure(font="TkFixedFont")
         self.Entry_constant_amps.configure(selectbackground="#c4c4c4")
@@ -289,13 +295,13 @@ class GUI:
 
         self.Label_constant_duration = Label(self.Notebook_ps_t0)
         self.Label_constant_duration.place(relx=0.027, rely=0.15, height=18
-                , width=79)
+                                           , width=79)
         self.Label_constant_duration.configure(activebackground="#f9f9f9")
         self.Label_constant_duration.configure(text='''Duration (s)''')
 
         self.Entry_constant_duration = Entry(self.Notebook_ps_t0)
         self.Entry_constant_duration.place(relx=0.297, rely=0.15, height=20
-                , relwidth=0.124)
+                                           , relwidth=0.124)
         self.Entry_constant_duration.configure(background="white")
         self.Entry_constant_duration.configure(font="TkFixedFont")
         self.Entry_constant_duration.configure(selectbackground="#c4c4c4")
@@ -303,7 +309,7 @@ class GUI:
 
         self.Button_constant_setconfig = Button(self.Notebook_ps_t0)
         self.Button_constant_setconfig.place(relx=0.027, rely=0.3, height=26
-                , width=135)
+                                             , width=135)
         self.Button_constant_setconfig.configure(activebackground="#d9d9d9")
         self.Button_constant_setconfig.configure(text='''Set Configuration''')
 
@@ -319,7 +325,7 @@ class GUI:
 
         self.Entry_square_amps = Entry(self.Notebook_ps_t1)
         self.Entry_square_amps.place(relx=0.297, rely=0.05, height=20
-                , relwidth=0.124)
+                                     , relwidth=0.124)
         self.Entry_square_amps.configure(background="white")
         self.Entry_square_amps.configure(font="TkFixedFont")
         self.Entry_square_amps.configure(selectbackground="#c4c4c4")
@@ -327,13 +333,13 @@ class GUI:
 
         self.Label_square_duration = Label(self.Notebook_ps_t1)
         self.Label_square_duration.place(relx=0.027, rely=0.15, height=18
-                , width=79)
+                                         , width=79)
         self.Label_square_duration.configure(activebackground="#f9f9f9")
         self.Label_square_duration.configure(text='''Duration (s)''')
 
         self.Entry_square_duration = Entry(self.Notebook_ps_t1)
         self.Entry_square_duration.place(relx=0.297, rely=0.15, height=20
-                , relwidth=0.124)
+                                         , relwidth=0.124)
         self.Entry_square_duration.configure(background="white")
         self.Entry_square_duration.configure(font="TkFixedFont")
         self.Entry_square_duration.configure(selectbackground="#c4c4c4")
@@ -346,7 +352,7 @@ class GUI:
 
         self.Entry_square_duty = Entry(self.Notebook_ps_t1)
         self.Entry_square_duty.place(relx=0.297, rely=0.25, height=20
-                , relwidth=0.124)
+                                     , relwidth=0.124)
         self.Entry_square_duty.configure(background="white")
         self.Entry_square_duty.configure(font="TkFixedFont")
         self.Entry_square_duty.configure(selectbackground="#c4c4c4")
@@ -354,7 +360,7 @@ class GUI:
 
         self.Button_square_setconfig = Button(self.Notebook_ps_t1)
         self.Button_square_setconfig.place(relx=0.027, rely=0.5, height=26
-                , width=135)
+                                           , width=135)
         self.Button_square_setconfig.configure(activebackground="#d9d9d9")
         self.Button_square_setconfig.configure(text='''Set Configuration''')
 
@@ -365,7 +371,7 @@ class GUI:
 
         self.Entry_square_freq = Entry(self.Notebook_ps_t1)
         self.Entry_square_freq.place(relx=0.297, rely=0.35, height=20
-                , relwidth=0.124)
+                                     , relwidth=0.124)
         self.Entry_square_freq.configure(background="white")
         self.Entry_square_freq.configure(font="TkFixedFont")
         self.Entry_square_freq.configure(selectbackground="#c4c4c4")
@@ -380,57 +386,61 @@ class GUI:
 
         self.Entry_sin_freq = Entry(self.Notebook_ps_t3)
         self.Entry_sin_freq.place(relx=0.324, rely=0.35, height=20
-                , relwidth=0.124)
+                                  , relwidth=0.124)
         self.Entry_sin_freq.configure(background="white")
         self.Entry_sin_freq.configure(font="TkFixedFont")
+        self.Entry_sin_freq.configure(selectbackground="#c4c4c4")
         self.Entry_sin_freq.configure(textvariable=gui_support.sin_freq)
-        self.Entry_sin_freq.configure(width=46)
 
         self.Label_sin_freq = Label(self.Notebook_ps_t3)
         self.Label_sin_freq.place(relx=0.027, rely=0.35, height=18, width=97)
+        self.Label_sin_freq.configure(activebackground="#f9f9f9")
         self.Label_sin_freq.configure(text='''Frequency (Hz)''')
 
         self.Label_sin_amplitude = Label(self.Notebook_ps_t3)
         self.Label_sin_amplitude.place(relx=0.027, rely=0.05, height=18
-                , width=99)
+                                       , width=99)
+        self.Label_sin_amplitude.configure(activebackground="#f9f9f9")
         self.Label_sin_amplitude.configure(text='''Amplitude (mA)''')
 
         self.Entry_sin_amplitude = Entry(self.Notebook_ps_t3)
         self.Entry_sin_amplitude.place(relx=0.324, rely=0.05, height=20
-                , relwidth=0.124)
+                                       , relwidth=0.124)
         self.Entry_sin_amplitude.configure(background="white")
         self.Entry_sin_amplitude.configure(font="TkFixedFont")
+        self.Entry_sin_amplitude.configure(selectbackground="#c4c4c4")
         self.Entry_sin_amplitude.configure(textvariable=gui_support.sin_amplitude)
-        self.Entry_sin_amplitude.configure(width=46)
 
         self.Label_sin_offset = Label(self.Notebook_ps_t3)
         self.Label_sin_offset.place(relx=0.027, rely=0.15, height=18, width=74)
+        self.Label_sin_offset.configure(activebackground="#f9f9f9")
         self.Label_sin_offset.configure(text='''Offset (mA)''')
 
         self.Entry_sin_offset = Entry(self.Notebook_ps_t3)
         self.Entry_sin_offset.place(relx=0.324, rely=0.15, height=20
-                , relwidth=0.124)
+                                    , relwidth=0.124)
         self.Entry_sin_offset.configure(background="white")
         self.Entry_sin_offset.configure(font="TkFixedFont")
+        self.Entry_sin_offset.configure(selectbackground="#c4c4c4")
         self.Entry_sin_offset.configure(textvariable=gui_support.sin_offset)
-        self.Entry_sin_offset.configure(width=46)
 
         self.Label_sin_duration = Label(self.Notebook_ps_t3)
         self.Label_sin_duration.place(relx=0.027, rely=0.25, height=18, width=79)
 
+        self.Label_sin_duration.configure(activebackground="#f9f9f9")
         self.Label_sin_duration.configure(text='''Duration (s)''')
 
         self.Entry_sin_duration = Entry(self.Notebook_ps_t3)
         self.Entry_sin_duration.place(relx=0.324, rely=0.25, height=20
-                , relwidth=0.124)
+                                      , relwidth=0.124)
         self.Entry_sin_duration.configure(background="white")
         self.Entry_sin_duration.configure(font="TkFixedFont")
+        self.Entry_sin_duration.configure(selectbackground="#c4c4c4")
         self.Entry_sin_duration.configure(textvariable=gui_support.sin_duration)
-        self.Entry_sin_duration.configure(width=46)
 
         self.Button_sin_setconfig = Button(self.Notebook_ps_t3)
         self.Button_sin_setconfig.place(relx=0.027, rely=0.5, height=26
-                , width=135)
+                                        , width=135)
         self.Button_sin_setconfig.configure(activebackground="#d9d9d9")
         self.Button_sin_setconfig.configure(text='''Set Configuration''')
 
@@ -446,7 +456,7 @@ class GUI:
 
         self.Status_Frame = Frame(top)
         self.Status_Frame.place(relx=0.541, rely=0.0, relheight=0.676
-                , relwidth=0.455)
+                                , relwidth=0.455)
         self.Status_Frame.configure(relief=RAISED)
         self.Status_Frame.configure(borderwidth="2")
         self.Status_Frame.configure(relief=RAISED)
@@ -463,26 +473,20 @@ class GUI:
         self.Label_status_pos.configure(activebackground="#f9f9f9")
         self.Label_status_pos.configure(text='''Position (um):''')
 
-        self.Label_status_posmode = Label(self.Status_Frame)
-        self.Label_status_posmode.place(relx=0.058, rely=0.141, height=18
-                , width=100)
-        self.Label_status_posmode.configure(activebackground="#f9f9f9")
-        self.Label_status_posmode.configure(text='''Position Mode:''')
-
         self.Label_status_res = Label(self.Status_Frame)
-        self.Label_status_res.place(relx=0.058, rely=0.235, height=18, width=74)
+        self.Label_status_res.place(relx=0.058, rely=0.188, height=18, width=74)
         self.Label_status_res.configure(activebackground="#f9f9f9")
         self.Label_status_res.configure(text='''Resolution:''')
 
         self.Label_status_vel = Label(self.Status_Frame)
-        self.Label_status_vel.place(relx=0.058, rely=0.188, height=18, width=107)
+        self.Label_status_vel.place(relx=0.058, rely=0.141, height=18, width=107)
 
         self.Label_status_vel.configure(activebackground="#f9f9f9")
         self.Label_status_vel.configure(text='''Velocity (units?):''')
 
         self.Label_status_magfield = Label(self.Status_Frame)
-        self.Label_status_magfield.place(relx=0.058, rely=0.282, height=18
-                , width=98)
+        self.Label_status_magfield.place(relx=0.058, rely=0.235, height=18
+                                         , width=98)
         self.Label_status_magfield.configure(activebackground="#f9f9f9")
         self.Label_status_magfield.configure(text='''Magnetic Field:''')
 
@@ -493,49 +497,42 @@ class GUI:
 
         self.Message_console = Message(self.Status_Frame)
         self.Message_console.place(relx=0.058, rely=0.682, relheight=0.212
-                , relwidth=0.893)
+                                   , relwidth=0.893)
         self.Message_console.configure(anchor=NW)
         self.Message_console.configure(background="#ffffff")
         self.Message_console.configure(highlightbackground="#d8d8d8")
         self.Message_console.configure(relief=SUNKEN)
         self.Message_console.configure(text='''Messages''')
+        self.Message_console.configure(textvariable=gui_support.console_output)
         self.Message_console.configure(width=308)
 
         self.Label_status_pos_v = Label(self.Status_Frame)
         self.Label_status_pos_v.place(relx=0.348, rely=0.094, height=18
-                , width=39)
+                                      , width=39)
         self.Label_status_pos_v.configure(activebackground="#f9f9f9")
         self.Label_status_pos_v.configure(justify=LEFT)
         self.Label_status_pos_v.configure(text='''Value''')
         self.Label_status_pos_v.configure(textvariable=gui_support.status_pos_v)
 
-        self.Label_status_posmode_v = Label(self.Status_Frame)
-        self.Label_status_posmode_v.place(relx=0.377, rely=0.141, height=18
-                , width=39)
-        self.Label_status_posmode_v.configure(activebackground="#f9f9f9")
-        self.Label_status_posmode_v.configure(justify=LEFT)
-        self.Label_status_posmode_v.configure(text='''Value''')
-        self.Label_status_posmode_v.configure(textvariable=gui_support.status_posmode_v)
-
         self.Label_status_vel_v = Label(self.Status_Frame)
-        self.Label_status_vel_v.place(relx=0.406, rely=0.188, height=18
-                , width=39)
+        self.Label_status_vel_v.place(relx=0.406, rely=0.141, height=18
+                                      , width=39)
         self.Label_status_vel_v.configure(activebackground="#f9f9f9")
         self.Label_status_vel_v.configure(justify=LEFT)
         self.Label_status_vel_v.configure(text='''Value''')
         self.Label_status_vel_v.configure(textvariable=gui_support.status_vel_v)
 
         self.Label_status_res_v = Label(self.Status_Frame)
-        self.Label_status_res_v.place(relx=0.319, rely=0.235, height=18
-                , width=39)
+        self.Label_status_res_v.place(relx=0.29, rely=0.188, height=18, width=39)
+
         self.Label_status_res_v.configure(activebackground="#f9f9f9")
         self.Label_status_res_v.configure(justify=LEFT)
         self.Label_status_res_v.configure(text='''Value''')
         self.Label_status_res_v.configure(textvariable=gui_support.status_res_v)
 
         self.Label_status_magfield_v = Label(self.Status_Frame)
-        self.Label_status_magfield_v.place(relx=0.377, rely=0.282, height=18
-                , width=39)
+        self.Label_status_magfield_v.place(relx=0.377, rely=0.235, height=18
+                                           , width=39)
         self.Label_status_magfield_v.configure(activebackground="#f9f9f9")
         self.Label_status_magfield_v.configure(justify=LEFT)
         self.Label_status_magfield_v.configure(text='''Value''')
@@ -543,13 +540,13 @@ class GUI:
 
         self.Button_status_refresh = Button(self.Status_Frame)
         self.Button_status_refresh.place(relx=0.754, rely=0.024, height=26
-                , width=74)
+                                         , width=74)
         self.Button_status_refresh.configure(activebackground="#d9d9d9")
         self.Button_status_refresh.configure(text='''Refresh''')
 
         self.Button_master_stop = Button(self.Status_Frame)
         self.Button_master_stop.place(relx=0.348, rely=0.918, height=31
-                , width=102)
+                                      , width=102)
         self.Button_master_stop.configure(activebackground="#d9d9d9")
         self.Button_master_stop.configure(font=font9)
         self.Button_master_stop.configure(foreground="#ff0000")
@@ -557,20 +554,13 @@ class GUI:
 
         self.Frame_demag = Frame(top)
         self.Frame_demag.place(relx=0.541, rely=0.684, relheight=0.31
-                , relwidth=0.455)
+                               , relwidth=0.455)
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(borderwidth="2")
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(width=345)
 
-        def demagnetization():
-            gui_support.status_magfield_v.set("100")
-            gui_support.status_pos_v.set("100")
-            gui_support.status_posmode_v.set("100")
-            gui_support.status_magfield_v.set("100")
-
-
-        self.Button_demag = Button(self.Frame_demag, command=demagnetization)
+        self.Button_demag = Button(self.Frame_demag, command=lambda:demagnetization())
         self.Button_demag.place(relx=0.145, rely=0.256, height=58, width=240)
         self.Button_demag.configure(activebackground="#d9d9d9")
         self.Button_demag.configure(text='''Start Demagnetization Process''')
