@@ -21,6 +21,7 @@ except ImportError:
 
 import gui_support
 
+from api.manipulator import *
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -76,27 +77,36 @@ class GUI:
         top.title("GUI")
         top.configure(highlightcolor="black")
 
-
-
         self.menubar = Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
         top.configure(menu = self.menubar)
+
+        #Maipulator.__init__(comm_port)
 
         def demagnetization():
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
             #TODO demagnetization call
+            #possibly callibration button
+            #So your code should be something like label1.text = first int
+            #Ditto label 2
+            #If returned int == -1 (failed)
+            #Display message box
             self.console_output.insert(1.0, "Demagnetization complete\n")
 
         def status_refresh():
             #TODO Refresh all value labels (mm.getstatus, mm.getposition)
+            #x,y,z = Maipulator.get_current_position()
+            x, y, z = 1.84, 2.12, 3
+            gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
             self.console_output.insert(1.0, "Status page refreshed\n")
 
-        def go_to_position():
+        def gtp():
             self.Button_gtp.configure(state="disabled")
             x = gui_support.gtp_x.get()
             y = gui_support.gtp_y.get()
             z = gui_support.gtp_z.get()
             self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
-            #TODO call manipulator instance go to position function
+            #Maipulator.go_to_position(self,x,y,z)
+            #TODO test call manipulator
             self.console_output.insert(1.0, "Moving complete\n")
             self.Button_gtp.configure(state="normal")
 
@@ -167,7 +177,7 @@ class GUI:
         self.Entry_gtp_z.configure(selectbackground="#c4c4c4")
         self.Entry_gtp_z.configure(textvariable=gui_support.gtp_z)
 
-        self.Button_gtp = Button(self.MM_Frame, command=lambda:go_to_position())
+        self.Button_gtp = Button(self.MM_Frame, command=lambda:gtp())
         self.Button_gtp.place(relx=0.049, rely=0.203, height=26, width=149)
         self.Button_gtp.configure(activebackground="#d9d9d9")
         self.Button_gtp.configure(text='''Go To Position (um)''')
@@ -578,7 +588,7 @@ class GUI:
         self.Label_status_magfield_v.configure(text='''Value''')
         self.Label_status_magfield_v.configure(textvariable=gui_support.status_magfield_v)
 
-        self.Button_status_refresh = Button(self.Status_Frame)
+        self.Button_status_refresh = Button(self.Status_Frame, command=lambda: status_refresh())
         self.Button_status_refresh.place(relx=0.754, rely=0.019, height=26
                                          , width=74)
         self.Button_status_refresh.configure(activebackground="#d9d9d9")
