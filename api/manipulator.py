@@ -7,8 +7,8 @@ _USTEPS_PER_UM_ = 25
 
 
 class Mode(Enum):
-    ABSOLUTE_MODE = b'a'
-    RELATIVE_MODE = b'b'
+    ABSOLUTE = b'a'
+    RELATIVE = b'b'
 
 
 class Resolution(Enum):
@@ -106,12 +106,12 @@ class Manipulator:
         """
         Set the velocity of the manipulator. Two resolutions are available:
 
-        HIGH_RESOLUTION allows for increments of 0.4um/second with max velocity of 1310 um/s
+        Resolution.HIGH allows for increments of 0.4um/second with max velocity of 1310 um/s
 
-        LOW_RESOLUTION allows for increments of 2um/second with max velocity of 6500 um/s(recommended maximum 3000 um/s)
+        Resolution.LOW allows for increments of 2um/second with max velocity of 6500 um/s(recommended maximum 3000 um/s)
 
         :param velocity: velocity value in um/second
-        :param resolution: Resolution either HIGH_RESOLUTION (0.4um/second) or LOW_RESOLUTION (2um/second)
+        :param resolution: Resolution either Resolution.HIGH (0.4um/second) or Resolution.LOW (2um/second)
         """
 
         if velocity <= 0:
