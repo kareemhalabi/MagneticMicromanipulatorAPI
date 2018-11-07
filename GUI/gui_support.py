@@ -66,6 +66,10 @@ def set_Tk_var():
     status_res_v = StringVar()
     global status_magfield_v
     status_magfield_v = StringVar()
+    global status_relpos_v
+    status_relpos_v = StringVar()
+    global status_abspos_v
+    status_abspos_v = StringVar()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
