@@ -19,7 +19,7 @@ class Resolution(Enum):
 _Num = Union[int, float]
 
 
-class Maipulator:
+class Manipulator:
 
     def __init__(self, comm_port: str):
 
