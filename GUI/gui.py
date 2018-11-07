@@ -22,6 +22,7 @@ except ImportError:
 import gui_support
 
 from api.manipulator import *
+from api.power_supply import *
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -80,7 +81,9 @@ class GUI:
         self.menubar = Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
         top.configure(menu = self.menubar)
 
-        #Maipulator.__init__(comm_port)
+        #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
+        Mani = Manipulator("COM7")
+        supply = PowerSupply("COM10")
 
         def demagnetization():
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
@@ -94,21 +97,31 @@ class GUI:
 
         def status_refresh():
             #TODO Refresh all value labels (mm.getstatus, mm.getposition)
-            #x,y,z = Maipulator.get_current_position()
-            x, y, z = 1.84, 2.12, 3
+            #TODO change LABEL to better fit the position output
+            Mani.set_mode(Mode.ABSOLUTE)
+            x, y, z = Mani.get_current_position()
+            gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
+            Mani.set_mode(Mode.RELATIVE)
+            x,y,z = Mani.get_current_position()
             gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
+            Mani.refresh_display()
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def gtp():
             self.Button_gtp.configure(state="disabled")
-            x = gui_support.gtp_x.get()
-            y = gui_support.gtp_y.get()
-            z = gui_support.gtp_z.get()
-            self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
-            #Maipulator.go_to_position(self,x,y,z)
+            x = float(gui_support.gtp_x.get())
+            y = float(gui_support.gtp_y.get())
+            z = float(gui_support.gtp_z.get())
+            self.console_output.insert(1.0, "Moving to "+str(x)+"x "+str(y)+"y "+str(z)+"z...\n")
+            Mani.go_to_position(x,y,z)
             #TODO test call manipulator
             self.console_output.insert(1.0, "Moving complete\n")
+            x, y, z = Mani.get_current_position()
+            gui_support.status_relpos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
             self.Button_gtp.configure(state="normal")
+
+        def origin():
+            Mani.set_origin()
 
         def step_x():
             x = gui_support.step_x.get()
@@ -137,6 +150,15 @@ class GUI:
         def disable_interface():
             #TODO disable all user interaction (buttons). Typically used when waiting for a mm move to finish
             '''does this work'''
+
+        def pathing():
+            #three entries, one for each axis
+            #two more entries for upper and lower bounds of time parameter
+            '''last'''
+
+        def set_constant():
+            current = float(gui_support.constant_amps.get())
+            supply.set_current(current)
 
 
         self.MM_Frame = Frame(top)
@@ -202,7 +224,7 @@ class GUI:
         self.Button_step_z.configure(activebackground="#d9d9d9")
         self.Button_step_z.configure(text='''z''')
 
-        self.Button_setorigin = Button(self.MM_Frame)
+        self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
         self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
         self.Button_setorigin.configure(activebackground="#d9d9d9")
         self.Button_setorigin.configure(text='''Set Origin''')
@@ -371,7 +393,7 @@ class GUI:
         self.Entry_constant_duration.configure(selectbackground="#c4c4c4")
         self.Entry_constant_duration.configure(textvariable=gui_support.constant_duration)
 
-        self.Button_constant_setconfig = Button(self.Notebook_ps_t0)
+        self.Button_constant_setconfig = Button(self.Notebook_ps_t0, command = lambda: set_constant())
         self.Button_constant_setconfig.place(relx=0.027, rely=0.3, height=26
                                              , width=135)
         self.Button_constant_setconfig.configure(activebackground="#d9d9d9")
