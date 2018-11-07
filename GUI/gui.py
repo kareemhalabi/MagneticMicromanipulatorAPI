@@ -82,6 +82,7 @@ class GUI:
         top.configure(menu = self.menubar)
 
         #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
+        #TODO VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         Mani = Manipulator("COM7")
         supply = PowerSupply("COM10")
 
@@ -114,7 +115,7 @@ class GUI:
             z = float(gui_support.gtp_z.get())
             self.console_output.insert(1.0, "Moving to "+str(x)+"x "+str(y)+"y "+str(z)+"z...\n")
             Mani.go_to_position(x,y,z)
-            #TODO test call manipulator
+            #TODO ADD RELATIVE/ABSOLUTE RADIO BUTTONS
             self.console_output.insert(1.0, "Moving complete\n")
             x, y, z = Mani.get_current_position()
             gui_support.status_relpos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
@@ -144,7 +145,7 @@ class GUI:
         def change_velocity():
             vel = gui_support.velocity.get()
             self.console_output.insert(1.0, "Changing velocity to " + vel + "um/s\n")
-            #TODO mm.change velocity
+
             self.console_output.insert(1.0, "Changed velocity\n")
 
         def disable_interface():
