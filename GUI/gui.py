@@ -20,6 +20,7 @@ except ImportError:
     py3 = True
 
 import gui_support
+import serial.tools.list_ports
 
 from api.manipulator import *
 from api.power_supply import *
@@ -83,8 +84,24 @@ class GUI:
 
         #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
         #TODO VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        Mani = Manipulator("COM7")
-        supply = PowerSupply("COM10")
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            print(p)
+
+        if "manipulator" in p[1]:
+            print("This is an Arduino!")
+
+        #mm = Manipulator("COM7")
+        #supply = PowerSupply("COM10")
+
+        #TODO GUI CHANGES
+        '''
+        -ABSOLUTE/RELATIVE RADIO BUTTONS
+        -FIX STATUS VALUE LABELS
+        -ADD POWER SUPPLY STATUS (AMPS, DURATION, SHAPE, FREQ)
+        -DEMAGNETIZATION CALIBRATION BUTTON? AND INSTRUCTIONS
+        -ENTRY VALIDATION
+        '''
 
         def demagnetization():
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
@@ -99,13 +116,13 @@ class GUI:
         def status_refresh():
             #TODO Refresh all value labels (mm.getstatus, mm.getposition)
             #TODO change LABEL to better fit the position output
-            Mani.set_mode(Mode.ABSOLUTE)
-            x, y, z = Mani.get_current_position()
+            mm.set_mode(Mode.ABSOLUTE)
+            x, y, z = mm.get_current_position()
             gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
-            Mani.set_mode(Mode.RELATIVE)
-            x,y,z = Mani.get_current_position()
+            mm.set_mode(Mode.RELATIVE)
+            x,y,z = mm.get_current_position()
             gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
-            Mani.refresh_display()
+            mm.refresh_display()
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def gtp():
@@ -114,38 +131,38 @@ class GUI:
             y = float(gui_support.gtp_y.get())
             z = float(gui_support.gtp_z.get())
             self.console_output.insert(1.0, "Moving to "+str(x)+"x "+str(y)+"y "+str(z)+"z...\n")
-            Mani.go_to_position(x,y,z)
+            #mm.go_to_position(x,y,z)
             #TODO ADD RELATIVE/ABSOLUTE RADIO BUTTONS
             self.console_output.insert(1.0, "Moving complete\n")
-            x, y, z = Mani.get_current_position()
+            #x, y, z = mm.get_current_position()
             gui_support.status_relpos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
             self.Button_gtp.configure(state="normal")
 
         def origin():
-            Mani.set_origin()
+            mm.set_origin()
 
         def step_x():
-            x = gui_support.step_x.get()
-            self.console_output.insert(1.0, "Moving by "+x+"x\n")
+            x = float(gui_support.step_x.get())
+            self.console_output.insert(1.0, "Moving by "+str(x)+"x\n")
             #TODO call manipulator instance go to position function
             self.console_output.insert(1.0, "Moving complete\n")
 
         def step_y():
-            y = gui_support.step_y.get()
-            self.console_output.insert(1.0, "Moving by "+y+"y\n")
+            y = float(gui_support.step_y.get())
+            self.console_output.insert(1.0, "Moving by "+str(y)+"y\n")
             #TODO call manipulator instance go to position function
             self.console_output.insert(1.0, "Moving complete\n")
 
         def step_z():
-            z = gui_support.step_z.get()
-            self.console_output.insert(1.0, "Moving by "+z+"z\n")
+            z = float(gui_support.step_z.get())
+            self.console_output.insert(1.0, "Moving by "+str(z)+"z\n")
             #TODO call manipulator instance go to position function
             self.console_output.insert(1.0, "Moving complete\n")
 
         def change_velocity():
-            vel = gui_support.velocity.get()
-            self.console_output.insert(1.0, "Changing velocity to " + vel + "um/s\n")
-
+            vel = float(gui_support.velocity.get())
+            self.console_output.insert(1.0, "Changing velocity to " + str(vel) + "um/s\n")
+            #TODO
             self.console_output.insert(1.0, "Changed velocity\n")
 
         def disable_interface():
@@ -157,9 +174,36 @@ class GUI:
             #two more entries for upper and lower bounds of time parameter
             '''last'''
 
-        def set_constant():
+        def set_constant_config():
+            duration = float(gui_support.square_duration.get())
             current = float(gui_support.constant_amps.get())
+            #TODO INCORPORATE DURATION
             supply.set_current(current)
+
+        def set_square_config():
+            # TODO
+            current = float(gui_support.square_amps.get())
+            duration = float(gui_support.square_duration.get())
+            freq = float(gui_support.square_freq.get())
+            duty = float(gui_support.square_duty.get())
+            supply.start_square_wave(current,1/freq,duty)
+            self.console_output.insert(1.0, "Set square wave configuration")
+
+        def set_sinusoidal_config():
+            # TODO
+            amplitude = float(gui_support.sin_amplitude.get())
+            duration = float(gui_support.sin_duration.get())
+            offset = float(gui_support.sin_offset.get())
+            freq = float(gui_support.sin_freq.get())
+            self.console_output.insert(1.0, "Set sinusoidal wave configuration")
+
+        def validate(self):
+            # https://stackoverflow.com/questions/4140437/interactively-validating-entry-widget-content-in-tkinter
+            if S == S.lower():
+                return True
+            else:
+                return False
+
 
 
         self.MM_Frame = Frame(top)
@@ -394,7 +438,7 @@ class GUI:
         self.Entry_constant_duration.configure(selectbackground="#c4c4c4")
         self.Entry_constant_duration.configure(textvariable=gui_support.constant_duration)
 
-        self.Button_constant_setconfig = Button(self.Notebook_ps_t0, command = lambda: set_constant())
+        self.Button_constant_setconfig = Button(self.Notebook_ps_t0, command = lambda: set_constant_config())
         self.Button_constant_setconfig.place(relx=0.027, rely=0.3, height=26
                                              , width=135)
         self.Button_constant_setconfig.configure(activebackground="#d9d9d9")
