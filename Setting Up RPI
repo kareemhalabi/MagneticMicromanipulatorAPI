@@ -1,0 +1,23 @@
+Download zip of RASPBIAN STRETCH WITH DESKTOP https://www.raspberrypi.org/downloads/raspbian/
+
+Unzip
+
+Format 16GB+ SD card to FAT32
+  Windows:
+    open cmd as admin
+    type 'diskpart'
+    'list disk'
+    'select disk #'
+    'select part primary'
+    'clean'
+    'create part primary'
+    'format fs=fat32'
+
+Burn previously unzipped ISO to SD card (can use Win32 Disk Imager)
+
+insert SD card into rpi
+
+enable vnc, ssh, and configure other personal settings
+
+sudo apt-get install tcl
+sudo apt-get install tk
