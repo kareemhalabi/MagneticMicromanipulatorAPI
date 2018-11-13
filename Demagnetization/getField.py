@@ -40,7 +40,7 @@ def getField():
         #uncomment below for pin difference reading
         #reading[i] = adc.read_adc_difference(inpin, gain=GAIN)
         #comment out below line if using difference reading
-        reading[i] = adc.read_adc(1, gain=GAIN)
+        reading[i] = adc.read_adc(inpin, gain=GAIN)
     deviation = statistics.stdev(reading)
     #here we want to remove outliers in the readings to account for bouncing or interference
     UB = statistics.mean(reading) + deviation
