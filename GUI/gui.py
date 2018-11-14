@@ -126,20 +126,24 @@ class GUI:
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def gtp():
-            self.Button_gtp.configure(state="disabled")
-            x = float(gui_support.gtp_x.get())
-            y = float(gui_support.gtp_y.get())
-            z = float(gui_support.gtp_z.get())
-            self.console_output.insert(1.0, "Moving to "+str(x)+"x "+str(y)+"y "+str(z)+"z...\n")
-            #mm.go_to_position(x,y,z)
-            #TODO ADD RELATIVE/ABSOLUTE RADIO BUTTONS
-            self.console_output.insert(1.0, "Moving complete\n")
-            #x, y, z = mm.get_current_position()
-            gui_support.status_relpos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
-            self.Button_gtp.configure(state="normal")
+            x = gui_support.gtp_x.get()
+            y = gui_support.gtp_y.get()
+            z = gui_support.gtp_z.get()
+            if not (str(x).isdigit() or str(y).isdigit() or str(z).isdigit()):
+                self.console_output.insert(1.0, "Only numbers and a single decimal point is allowed...\n")
+            else:
+                self.Button_gtp.configure(state="disabled")
+                self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
+                #mm.go_to_position(float(x),float(y),float(z))
+                #TODO ADD RELATIVE/ABSOLUTE RADIO BUTTONS
+                self.console_output.insert(1.0, "Moving complete\n")
+                #x, y, z = mm.get_current_position()
+                gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
+                self.Button_gtp.configure(state="normal")
 
         def origin():
             mm.set_origin()
+            self.console_output.insert(1.0, "Origin set\n")
 
         def step_x():
             x = float(gui_support.step_x.get())
@@ -197,14 +201,17 @@ class GUI:
             freq = float(gui_support.sin_freq.get())
             self.console_output.insert(1.0, "Set sinusoidal wave configuration")
 
-        def validate(self):
+        def validate():
             # https://stackoverflow.com/questions/4140437/interactively-validating-entry-widget-content-in-tkinter
-            if S == S.lower():
+            #, validate="all", validatecommand=lambda: validate()
+            #shit aint working
+            t = gui_support.gtp_x.get()
+            if t.isdigit() or len(t)==0:
                 return True
             else:
+                t = t[0:-1]
+                gui_support.gtp_x.set(t)
                 return False
-
-
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
@@ -710,11 +717,11 @@ class GUI:
         self.Label1.configure(activebackground="#f9f9f9")
         self.Label1.configure(text='''tkinter messagebox for popup''')
 
-        self.Entry_gtp_x.insert(0, 'x')
+        self.Entry_gtp_x.insert(0, "x")
         self.Entry_gtp_x.bind("<FocusIn>", lambda args: self.Entry_gtp_x.delete('0', 'end'))
-        self.Entry_gtp_y.insert(0, 'y')
+        self.Entry_gtp_y.insert(0, "y")
         self.Entry_gtp_y.bind("<FocusIn>", lambda args: self.Entry_gtp_y.delete('0', 'end'))
-        self.Entry_gtp_z.insert(0, 'z')
+        self.Entry_gtp_z.insert(0, "z")
         self.Entry_gtp_z.bind("<FocusIn>", lambda args: self.Entry_gtp_z.delete('0', 'end'))
 
 class Controller():
