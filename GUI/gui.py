@@ -24,6 +24,7 @@ import serial.tools.list_ports
 
 from api.manipulator import *
 from api.power_supply import *
+#from Demagnetization.demag import *
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -87,12 +88,12 @@ class GUI:
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
             print(p)
-
-        if "manipulator" in p[1]:
-            print("This is an Arduino!")
+            if "manipulator" in p[1]:
+                print("This is an Arduino!")
 
         #mm = Manipulator("COM7")
         #supply = PowerSupply("COM10")
+
 
         #TODO
         '''
@@ -103,6 +104,8 @@ class GUI:
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         -UPDATE STATUS AFTER EVERY OPERATION
         -DEMAG INTERRUPT
+        
+        -CALL CALIBRATE RETURNS INT, STORE INT AND PASS INT TO DEMAG BUTTON (GLOBAL VAR) 
         '''
 
         def demagnetization():
@@ -113,6 +116,8 @@ class GUI:
             #Ditto label 2
             #If returned int == -1 (failed)
             #Display message box
+
+            demagCurrent()
             self.console_output.insert(1.0, "Demagnetization complete\n")
 
         def calibrate_demag():
@@ -129,6 +134,7 @@ class GUI:
             mm.set_mode(Mode.RELATIVE)
             x,y,z = mm.get_current_position()
             gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
+            vel = mm.get_status()
             mm.refresh_display()
             self.console_output.insert(1.0, "Status page refreshed\n")
 
