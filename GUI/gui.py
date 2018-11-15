@@ -5,7 +5,11 @@
 # In conjunction with Tcl version 8.6
 #    Nov 05, 2018 02:38:38 AM EST  platform: Linux
 
-import sys
+import os,sys
+current_directory = os.getcwd()
+parent_directory = os.path.dirname(current_directory)
+sys.path.insert(0, parent_directory)
+sys.path.append(parent_directory+'\Demagnetization')
 
 try:
     from Tkinter import *
@@ -24,6 +28,7 @@ import serial.tools.list_ports
 
 from api.manipulator import *
 from api.power_supply import *
+from threading import Timer,Thread,Event
 #from Demagnetization.demag import *
 
 def vp_start_gui():
@@ -98,14 +103,12 @@ class GUI:
         #TODO
         '''
         -ADD POWER SUPPLY STATUS (AMPS, DURATION, SHAPE, FREQ)
-        -DEMAGNETIZATION
+        -DEFINITIONS FOR RAMPING
+        -CHANGE OF DEFINITIONS FOR POWER SUPPLY RUN/STOP
         -INPUT VALIDATION
         -DURATION (ASK KAREEM)
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        -UPDATE STATUS AFTER EVERY OPERATION
-        -DEMAG INTERRUPT
-        
-        -CALL CALIBRATE RETURNS INT, STORE INT AND PASS INT TO DEMAG BUTTON (GLOBAL VAR) 
+        -UPDATE STATUS AFTER EVERY OPERATION        
         '''
 
         def demagnetization():
@@ -116,14 +119,26 @@ class GUI:
             #Ditto label 2
             #If returned int == -1 (failed)
             #Display message box
-
-            demagCurrent()
+            time.sleep(3)
+            #demagCurrent(zero_field)
             self.console_output.insert(1.0, "Demagnetization complete\n")
 
         def calibrate_demag():
             self.console_output.insert(1.0, "Calibration in progress...\n")
-            #TODO
+            time.sleep(3)
+            global zero_field
+            zero_field = 3
+            #zero_field = calibrate()
             self.console_output.insert(1.0, "Calibration complete\n")
+
+        def popupmsg(msg):
+            popup = Tk()
+            popup.wm_title("!")
+            label = Label(popup, text=msg)
+            label.pack(side="top", fill="x", pady=10)
+            B1 = ttk.Button(popup, text="Okay", command=popup.destroy)
+            B1.pack()
+            popup.mainloop()
 
         def status_refresh():
             #TODO Refresh all value labels (mm.getstatus, mm.getposition)
@@ -219,6 +234,7 @@ class GUI:
 
         def run():
             supply.enable_output()
+
             self.console_output.insert(1.0, "Power supply output enabled\n")
             #TODO incorporate duration
 
@@ -395,7 +411,7 @@ class GUI:
         self.Radiobutton_highres.configure(variable=gui_support.radio_resolution)
 
         self.Radiobutton_lowres = Radiobutton(self.MM_Frame, command = lambda: change_resolution())
-        self.Radiobutton_lowres.place(relx=0.42, rely=0.644, relheight=0.068
+        self.Radiobutton_lowres.place(relx=0.43, rely=0.644, relheight=0.068
                                       , relwidth=0.415)
         self.Radiobutton_lowres.configure(activebackground="#d9d9d9")
         self.Radiobutton_lowres.configure(justify=LEFT)
@@ -407,7 +423,6 @@ class GUI:
         self.Button_mm_interrupt.place(relx=0.642, rely=0.847, height=36
                                        , width=131)
         self.Button_mm_interrupt.configure(activebackground="#d80000")
-        self.Button_mm_interrupt.configure(activeforeground="white")
         self.Button_mm_interrupt.configure(background="#d80000")
         self.Button_mm_interrupt.configure(font=font10)
         self.Button_mm_interrupt.configure(state=ACTIVE)
@@ -459,13 +474,13 @@ class GUI:
         self.Label_ps.configure(font=font9)
         self.Label_ps.configure(text='''Current/Power Supply''')
 
-        self.Button_ps_interrupt = Button(self.Current_Frame, command = lambda: supply_interupt())
-        self.Button_ps_interrupt.place(relx=0.642, rely=0.862, height=36
+        self.Button_ps_interrupt = Button(self.Current_Frame)
+        self.Button_ps_interrupt.place(relx=0.642, rely=0.842, height=36
                                        , width=131)
         self.Button_ps_interrupt.configure(activebackground="#d80000")
-        self.Button_ps_interrupt.configure(activeforeground="white")
         self.Button_ps_interrupt.configure(background="#d80000")
         self.Button_ps_interrupt.configure(font=font10)
+        self.Button_ps_interrupt.configure(state=ACTIVE)
         self.Button_ps_interrupt.configure(text='''Interrupt''')
         self.Button_ps_interrupt.configure(width=131)
 
@@ -474,7 +489,7 @@ class GUI:
         self.style.map('TNotebook.Tab', background=
         [('selected', _compcolor), ('active', _ana2color)])
         self.Notebook_ps = ttk.Notebook(self.Current_Frame)
-        self.Notebook_ps.place(relx=0.025, rely=0.123, relheight=0.686
+        self.Notebook_ps.place(relx=0.025, rely=0.14, relheight=0.572
                                , relwidth=0.919)
         self.Notebook_ps.configure(width=372)
         self.Notebook_ps.configure(takefocus="")
@@ -487,184 +502,227 @@ class GUI:
         self.Notebook_ps.tab(1, text="Square", compound="left", underline="-1", )
         self.Notebook_ps_t2 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t2, padding=3)
-        self.Notebook_ps.tab(2, text="Custom", compound="left", underline="-1", )
+        self.Notebook_ps.tab(2, text="Sinusoidal", compound="left", underline="-1"
+                             , )
         self.Notebook_ps_t3 = Frame(self.Notebook_ps)
         self.Notebook_ps.add(self.Notebook_ps_t3, padding=3)
-        self.Notebook_ps.tab(3, text="Sinusoidal", compound="left", underline="-1"
-                             , )
+        self.Notebook_ps.tab(3, text="Ramping", compound="none", underline="-1", )
 
         self.Label_constant_amps = Label(self.Notebook_ps_t0)
-        self.Label_constant_amps.place(relx=0.027, rely=0.05, height=18
+        self.Label_constant_amps.place(relx=0.027, rely=0.071, height=18
                                        , width=92)
         self.Label_constant_amps.configure(activebackground="#f9f9f9")
         self.Label_constant_amps.configure(text='''Amperes (mA)''')
 
         self.Entry_constant_amps = Entry(self.Notebook_ps_t0)
-        self.Entry_constant_amps.place(relx=0.297, rely=0.05, height=20
-                                       , relwidth=0.124)
+        self.Entry_constant_amps.place(relx=0.297, rely=0.071, height=20
+                                       , relwidth=0.178)
         self.Entry_constant_amps.configure(background="white")
         self.Entry_constant_amps.configure(font="TkFixedFont")
         self.Entry_constant_amps.configure(selectbackground="#c4c4c4")
         self.Entry_constant_amps.configure(textvariable=gui_support.constant_amps)
 
         self.Label_constant_duration = Label(self.Notebook_ps_t0)
-        self.Label_constant_duration.place(relx=0.027, rely=0.15, height=18
+        self.Label_constant_duration.place(relx=0.027, rely=0.214, height=18
                                            , width=79)
         self.Label_constant_duration.configure(activebackground="#f9f9f9")
         self.Label_constant_duration.configure(text='''Duration (s)''')
 
         self.Entry_constant_duration = Entry(self.Notebook_ps_t0)
-        self.Entry_constant_duration.place(relx=0.297, rely=0.15, height=20
-                                           , relwidth=0.124)
+        self.Entry_constant_duration.place(relx=0.297, rely=0.214, height=20
+                                           , relwidth=0.178)
         self.Entry_constant_duration.configure(background="white")
         self.Entry_constant_duration.configure(font="TkFixedFont")
         self.Entry_constant_duration.configure(selectbackground="#c4c4c4")
         self.Entry_constant_duration.configure(textvariable=gui_support.constant_duration)
 
-        self.Button_constant_setconfig = Button(self.Notebook_ps_t0, command = lambda: set_constant_config())
-        self.Button_constant_setconfig.place(relx=0.027, rely=0.3, height=26
-                                             , width=135)
-        self.Button_constant_setconfig.configure(activebackground="#d9d9d9")
-        self.Button_constant_setconfig.configure(text='''Set Configuration''')
+        self.Button_constant_run = Button(self.Notebook_ps_t0)
+        self.Button_constant_run.place(relx=0.027, rely=0.429, height=26
+                                       , width=50)
+        self.Button_constant_run.configure(activebackground="#d9d9d9")
+        self.Button_constant_run.configure(text='''Run''')
 
-        self.Label_square_amps = Label(self.Notebook_ps_t1)
-        self.Label_square_amps.place(relx=0.027, rely=0.05, height=18, width=92)
-        self.Label_square_amps.configure(activebackground="#f9f9f9")
-        self.Label_square_amps.configure(text='''Amperes (mA)''')
+        self.Label_square_amp = Label(self.Notebook_ps_t1)
+        self.Label_square_amp.place(relx=0.027, rely=0.071, height=18, width=99)
+        self.Label_square_amp.configure(activebackground="#f9f9f9")
+        self.Label_square_amp.configure(text='''Amplitude (mA)''')
 
-        self.Entry_square_amps = Entry(self.Notebook_ps_t1)
-        self.Entry_square_amps.place(relx=0.297, rely=0.05, height=20
-                                     , relwidth=0.124)
-        self.Entry_square_amps.configure(background="white")
-        self.Entry_square_amps.configure(font="TkFixedFont")
-        self.Entry_square_amps.configure(selectbackground="#c4c4c4")
-        self.Entry_square_amps.configure(textvariable=gui_support.square_amps)
+        self.Entry_square_amp = Entry(self.Notebook_ps_t1)
+        self.Entry_square_amp.place(relx=0.324, rely=0.071, height=20
+                                    , relwidth=0.178)
+        self.Entry_square_amp.configure(background="white")
+        self.Entry_square_amp.configure(font="TkFixedFont")
+        self.Entry_square_amp.configure(selectbackground="#c4c4c4")
+        self.Entry_square_amp.configure(textvariable=gui_support.square_amp)
 
         self.Label_square_duration = Label(self.Notebook_ps_t1)
-        self.Label_square_duration.place(relx=0.027, rely=0.15, height=18
+        self.Label_square_duration.place(relx=0.027, rely=0.214, height=18
                                          , width=79)
         self.Label_square_duration.configure(activebackground="#f9f9f9")
         self.Label_square_duration.configure(text='''Duration (s)''')
 
         self.Entry_square_duration = Entry(self.Notebook_ps_t1)
-        self.Entry_square_duration.place(relx=0.297, rely=0.15, height=20
-                                         , relwidth=0.124)
+        self.Entry_square_duration.place(relx=0.324, rely=0.214, height=20
+                                         , relwidth=0.178)
         self.Entry_square_duration.configure(background="white")
         self.Entry_square_duration.configure(font="TkFixedFont")
         self.Entry_square_duration.configure(selectbackground="#c4c4c4")
         self.Entry_square_duration.configure(textvariable=gui_support.square_duration)
 
         self.Label_square_duty = Label(self.Notebook_ps_t1)
-        self.Label_square_duty.place(relx=0.027, rely=0.25, height=18, width=93)
+        self.Label_square_duty.place(relx=0.027, rely=0.357, height=18, width=93)
+
         self.Label_square_duty.configure(activebackground="#f9f9f9")
         self.Label_square_duty.configure(text='''Duty Cycle (%)''')
 
         self.Entry_square_duty = Entry(self.Notebook_ps_t1)
-        self.Entry_square_duty.place(relx=0.297, rely=0.25, height=20
-                                     , relwidth=0.124)
+        self.Entry_square_duty.place(relx=0.324, rely=0.357, height=20
+                                     , relwidth=0.178)
         self.Entry_square_duty.configure(background="white")
         self.Entry_square_duty.configure(font="TkFixedFont")
         self.Entry_square_duty.configure(selectbackground="#c4c4c4")
         self.Entry_square_duty.configure(textvariable=gui_support.square_duty)
 
-        self.Button_square_setconfig = Button(self.Notebook_ps_t1, command = lambda: set_square_config())
-        self.Button_square_setconfig.place(relx=0.027, rely=0.5, height=26
-                                           , width=135)
-        self.Button_square_setconfig.configure(activebackground="#d9d9d9")
-        self.Button_square_setconfig.configure(text='''Set Configuration''')
-
         self.Label_square_freq = Label(self.Notebook_ps_t1)
-        self.Label_square_freq.place(relx=0.027, rely=0.35, height=18, width=97)
+        self.Label_square_freq.place(relx=0.027, rely=0.5, height=18, width=97)
         self.Label_square_freq.configure(activebackground="#f9f9f9")
         self.Label_square_freq.configure(text='''Frequency (Hz)''')
 
         self.Entry_square_freq = Entry(self.Notebook_ps_t1)
-        self.Entry_square_freq.place(relx=0.297, rely=0.35, height=20
-                                     , relwidth=0.124)
+        self.Entry_square_freq.place(relx=0.324, rely=0.5, height=20
+                                     , relwidth=0.178)
         self.Entry_square_freq.configure(background="white")
         self.Entry_square_freq.configure(font="TkFixedFont")
         self.Entry_square_freq.configure(selectbackground="#c4c4c4")
         self.Entry_square_freq.configure(textvariable=gui_support.square_freq)
 
-        self.Label9 = Label(self.Notebook_ps_t2)
-        self.Label9.place(relx=0.054, rely=0.15, height=98, width=217)
-        self.Label9.configure(activebackground="#f9f9f9")
-        self.Label9.configure(justify=LEFT)
-        self.Label9.configure(text='''linear rise, exponential rise, rise time, duration-risetime=steadystate time''')
-        self.Label9.configure(wraplength="200")
+        self.Button_square_run = Button(self.Notebook_ps_t1)
+        self.Button_square_run.place(relx=0.027, rely=0.714, height=26, width=50)
 
-        self.Entry_sin_freq = Entry(self.Notebook_ps_t3)
-        self.Entry_sin_freq.place(relx=0.324, rely=0.35, height=20
-                                  , relwidth=0.124)
+        self.Button_square_run.configure(activebackground="#d9d9d9")
+        self.Button_square_run.configure(text='''Run''')
+
+        self.Entry_sin_freq = Entry(self.Notebook_ps_t2)
+        self.Entry_sin_freq.place(relx=0.324, rely=0.357, height=20
+                                  , relwidth=0.178)
         self.Entry_sin_freq.configure(background="white")
         self.Entry_sin_freq.configure(font="TkFixedFont")
         self.Entry_sin_freq.configure(selectbackground="#c4c4c4")
         self.Entry_sin_freq.configure(textvariable=gui_support.sin_freq)
 
-        self.Label_sin_freq = Label(self.Notebook_ps_t3)
-        self.Label_sin_freq.place(relx=0.027, rely=0.35, height=18, width=97)
+        self.Label_sin_freq = Label(self.Notebook_ps_t2)
+        self.Label_sin_freq.place(relx=0.027, rely=0.357, height=18, width=97)
         self.Label_sin_freq.configure(activebackground="#f9f9f9")
         self.Label_sin_freq.configure(text='''Frequency (Hz)''')
 
-        self.Label_sin_amplitude = Label(self.Notebook_ps_t3)
-        self.Label_sin_amplitude.place(relx=0.027, rely=0.05, height=18
-                                       , width=99)
-        self.Label_sin_amplitude.configure(activebackground="#f9f9f9")
-        self.Label_sin_amplitude.configure(text='''Amplitude (mA)''')
+        self.Label_sin_amp = Label(self.Notebook_ps_t2)
+        self.Label_sin_amp.place(relx=0.027, rely=0.071, height=18, width=99)
+        self.Label_sin_amp.configure(activebackground="#f9f9f9")
+        self.Label_sin_amp.configure(text='''Amplitude (mA)''')
 
-        self.Entry_sin_amplitude = Entry(self.Notebook_ps_t3)
-        self.Entry_sin_amplitude.place(relx=0.324, rely=0.05, height=20
-                                       , relwidth=0.124)
+        self.Entry_sin_amplitude = Entry(self.Notebook_ps_t2)
+        self.Entry_sin_amplitude.place(relx=0.324, rely=0.071, height=20
+                                       , relwidth=0.178)
         self.Entry_sin_amplitude.configure(background="white")
         self.Entry_sin_amplitude.configure(font="TkFixedFont")
         self.Entry_sin_amplitude.configure(selectbackground="#c4c4c4")
         self.Entry_sin_amplitude.configure(textvariable=gui_support.sin_amplitude)
 
-        self.Label_sin_offset = Label(self.Notebook_ps_t3)
-        self.Label_sin_offset.place(relx=0.027, rely=0.15, height=18, width=74)
+        self.Label_sin_offset = Label(self.Notebook_ps_t2)
+        self.Label_sin_offset.place(relx=0.027, rely=0.214, height=18, width=74)
         self.Label_sin_offset.configure(activebackground="#f9f9f9")
         self.Label_sin_offset.configure(text='''Offset (mA)''')
 
-        self.Entry_sin_offset = Entry(self.Notebook_ps_t3)
-        self.Entry_sin_offset.place(relx=0.324, rely=0.15, height=20
-                                    , relwidth=0.124)
+        self.Entry_sin_offset = Entry(self.Notebook_ps_t2)
+        self.Entry_sin_offset.place(relx=0.324, rely=0.214, height=20
+                                    , relwidth=0.178)
         self.Entry_sin_offset.configure(background="white")
         self.Entry_sin_offset.configure(font="TkFixedFont")
         self.Entry_sin_offset.configure(selectbackground="#c4c4c4")
         self.Entry_sin_offset.configure(textvariable=gui_support.sin_offset)
 
-        self.Label_sin_duration = Label(self.Notebook_ps_t3)
-        self.Label_sin_duration.place(relx=0.027, rely=0.25, height=18, width=79)
-
+        self.Label_sin_duration = Label(self.Notebook_ps_t2)
+        self.Label_sin_duration.place(relx=0.027, rely=0.5, height=18, width=79)
         self.Label_sin_duration.configure(activebackground="#f9f9f9")
         self.Label_sin_duration.configure(text='''Duration (s)''')
 
-        self.Entry_sin_duration = Entry(self.Notebook_ps_t3)
-        self.Entry_sin_duration.place(relx=0.324, rely=0.25, height=20
-                                      , relwidth=0.124)
+        self.Entry_sin_duration = Entry(self.Notebook_ps_t2)
+        self.Entry_sin_duration.place(relx=0.324, rely=0.5, height=20
+                                      , relwidth=0.178)
         self.Entry_sin_duration.configure(background="white")
         self.Entry_sin_duration.configure(font="TkFixedFont")
         self.Entry_sin_duration.configure(selectbackground="#c4c4c4")
         self.Entry_sin_duration.configure(textvariable=gui_support.sin_duration)
 
-        self.Button_sin_setconfig = Button(self.Notebook_ps_t3, command = lambda: set_sinusoidal_config())
-        self.Button_sin_setconfig.place(relx=0.027, rely=0.5, height=26
-                                        , width=135)
-        self.Button_sin_setconfig.configure(activebackground="#d9d9d9")
-        self.Button_sin_setconfig.configure(text='''Set Configuration''')
+        self.Button_sin_run = Button(self.Notebook_ps_t2)
+        self.Button_sin_run.place(relx=0.027, rely=0.714, height=26, width=50)
+        self.Button_sin_run.configure(activebackground="#d9d9d9")
+        self.Button_sin_run.configure(text='''Run''')
 
-        self.Button_ps_run = Button(self.Current_Frame, command = lambda: run())
-        self.Button_ps_run.place(relx=0.049, rely=0.862, height=26, width=50)
-        self.Button_ps_run.configure(activebackground="#d9d9d9")
-        self.Button_ps_run.configure(text='''Run''')
+        self.Label_ramping_amp = Label(self.Notebook_ps_t3)
+        self.Label_ramping_amp.place(relx=0.027, rely=0.071, height=18, width=99)
 
-        self.Button_ps_stop = Button(self.Current_Frame, command = lambda: stop())
-        self.Button_ps_stop.place(relx=0.272, rely=0.862, height=26, width=55)
-        self.Button_ps_stop.configure(activebackground="#d9d9d9")
-        self.Button_ps_stop.configure(text='''Stop''')
+        self.Label_ramping_amp.configure(text='''Amplitude (mA)''')
+
+        self.Label_ramping_rise = Label(self.Notebook_ps_t3)
+        self.Label_ramping_rise.place(relx=0.027, rely=0.214, height=18
+                                      , width=84)
+        self.Label_ramping_rise.configure(text='''Rise Time (s)''')
+
+        self.Label_ramping_steady = Label(self.Notebook_ps_t3)
+        self.Label_ramping_steady.place(relx=0.027, rely=0.357, height=18
+                                        , width=101)
+        self.Label_ramping_steady.configure(text='''Steady Time (s)''')
+
+        self.Label5 = Label(self.Notebook_ps_t3)
+        self.Label5.place(relx=0.027, rely=0.5, height=18, width=86)
+        self.Label5.configure(text='''Rest Time (s)''')
+
+        self.Entry_ramping_amp = Entry(self.Notebook_ps_t3)
+        self.Entry_ramping_amp.place(relx=0.324, rely=0.071, height=20
+                                     , relwidth=0.178)
+        self.Entry_ramping_amp.configure(background="white")
+        self.Entry_ramping_amp.configure(font="TkFixedFont")
+        self.Entry_ramping_amp.configure(textvariable=gui_support.ramping_amp)
+        self.Entry_ramping_amp.configure(width=66)
+
+        self.Entry_ramping_rise = Entry(self.Notebook_ps_t3)
+        self.Entry_ramping_rise.place(relx=0.324, rely=0.214, height=20
+                                      , relwidth=0.178)
+        self.Entry_ramping_rise.configure(background="white")
+        self.Entry_ramping_rise.configure(font="TkFixedFont")
+        self.Entry_ramping_rise.configure(textvariable=gui_support.ramping_rise)
+        self.Entry_ramping_rise.configure(width=66)
+
+        self.Entry_ramping_steady = Entry(self.Notebook_ps_t3)
+        self.Entry_ramping_steady.place(relx=0.324, rely=0.357, height=20
+                                        , relwidth=0.178)
+        self.Entry_ramping_steady.configure(background="white")
+        self.Entry_ramping_steady.configure(font="TkFixedFont")
+        self.Entry_ramping_steady.configure(textvariable=gui_support.ramping_steady)
+        self.Entry_ramping_steady.configure(width=66)
+
+        self.Entry_ramping_rest = Entry(self.Notebook_ps_t3)
+        self.Entry_ramping_rest.place(relx=0.324, rely=0.5, height=20
+                                      , relwidth=0.178)
+        self.Entry_ramping_rest.configure(background="white")
+        self.Entry_ramping_rest.configure(font="TkFixedFont")
+        self.Entry_ramping_rest.configure(textvariable=gui_support.ramping_rest)
+        self.Entry_ramping_rest.configure(width=66)
+
+        self.Button_ramping_run = Button(self.Notebook_ps_t3)
+        self.Button_ramping_run.place(relx=0.027, rely=0.714, height=26
+                                      , width=50)
+        self.Button_ramping_run.configure(activebackground="#d9d9d9")
+        self.Button_ramping_run.configure(text='''Run''')
+
+        self.Button_stop = Button(self.Current_Frame)
+        self.Button_stop.place(relx=0.025, rely=0.772, height=26, width=55)
+        self.Button_stop.configure(activebackground="#d9d9d9")
+        self.Button_stop.configure(text='''Stop''')
 
         self.Status_Frame = Frame(top)
-        self.Status_Frame.place(relx=0.541, rely=0.0, relheight=0.835
+        self.Status_Frame.place(relx=0.541, rely=0.0, relheight=0.735
                                 , relwidth=0.455)
         self.Status_Frame.configure(relief=RAISED)
         self.Status_Frame.configure(borderwidth="2")
@@ -677,30 +735,41 @@ class GUI:
         self.Label_status.configure(font=font9)
         self.Label_status.configure(text='''Status''')
 
-        self.Label_status_relpos = Label(self.Status_Frame)
+        self.Label_status_relpos = Label(self.Status_Frame, anchor='w')
         self.Label_status_relpos.place(relx=0.058, rely=0.076, height=18
                                        , width=144)
         self.Label_status_relpos.configure(activebackground="#f9f9f9")
         self.Label_status_relpos.configure(text='''Relative Position (um):''')
 
-        self.Label_status_res = Label(self.Status_Frame)
+        self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
+        self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
+                                       , width=150)
+        self.Label_status_abspos.configure(text='''Absolute Position (um):''')
+
+        self.Label_status_abspos_v = Label(self.Status_Frame, anchor='w')
+        self.Label_status_abspos_v.place(relx=0.58, rely=0.114, height=18
+                                         , width=39)
+        self.Label_status_abspos_v.configure(text='''Value''')
+        self.Label_status_abspos_v.configure(textvariable=gui_support.status_abspos_v)
+
+        self.Label_status_res = Label(self.Status_Frame, anchor='w')
         self.Label_status_res.place(relx=0.058, rely=0.19, height=18, width=74)
         self.Label_status_res.configure(activebackground="#f9f9f9")
         self.Label_status_res.configure(text='''Resolution:''')
 
-        self.Label_status_vel = Label(self.Status_Frame)
+        self.Label_status_vel = Label(self.Status_Frame, anchor='w')
         self.Label_status_vel.place(relx=0.058, rely=0.152, height=18, width=100)
 
         self.Label_status_vel.configure(activebackground="#f9f9f9")
         self.Label_status_vel.configure(text='''Velocity (um/s):''')
 
-        self.Label_status_magfield = Label(self.Status_Frame)
+        self.Label_status_magfield = Label(self.Status_Frame, anchor='w')
         self.Label_status_magfield.place(relx=0.058, rely=0.229, height=18
                                          , width=98)
         self.Label_status_magfield.configure(activebackground="#f9f9f9")
         self.Label_status_magfield.configure(text='''Magnetic Field:''')
 
-        self.Label_console = Label(self.Status_Frame)
+        self.Label_console = Label(self.Status_Frame, anchor='w')
         self.Label_console.place(relx=0.058, rely=0.59, height=18, width=101)
         self.Label_console.configure(activebackground="#f9f9f9")
         self.Label_console.configure(text='''Console Output''')
@@ -764,19 +833,8 @@ class GUI:
         self.console_output.configure(width=10)
         self.console_output.configure(wrap=NONE)
 
-        self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
-        self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
-                                       , width=150)
-        self.Label_status_abspos.configure(text='''Absolute Position (um):''')
-
-        self.Label_status_abspos_v = Label(self.Status_Frame)
-        self.Label_status_abspos_v.place(relx=0.58, rely=0.114, height=18
-                                         , width=39)
-        self.Label_status_abspos_v.configure(text='''Value''')
-        self.Label_status_abspos_v.configure(textvariable=gui_support.status_abspos_v)
-
         self.Frame_demag = Frame(top)
-        self.Frame_demag.place(relx=0.541, rely=0.843, relheight=0.151
+        self.Frame_demag.place(relx=0.541, rely=0.743, relheight=0.251
                                , relwidth=0.455)
         self.Frame_demag.configure(relief=RAISED)
         self.Frame_demag.configure(borderwidth="2")
@@ -784,32 +842,45 @@ class GUI:
         self.Frame_demag.configure(width=345)
 
         self.Button_demag = Button(self.Frame_demag, command=lambda: demagnetization())
-        self.Button_demag.place(relx=0.345, rely=0.105, height=40, width=200)
+        self.Button_demag.place(relx=0.145, rely=0.550, height=40, width=215)
         self.Button_demag.configure(activebackground="#d9d9d9")
-        self.Button_demag.configure(text='''Start Demagnetization Process''')
+        self.Button_demag.configure(text='''4. Start Demagnetization Process''')
 
         self.Button_calibrate = Button(self.Frame_demag, command=lambda: calibrate_demag())
-        self.Button_calibrate.place(relx=0.045, rely=0.105, height=26, width=65)
+        self.Button_calibrate.place(relx=0.300, rely=0.215, height=26, width=85)
         self.Button_calibrate.configure(activebackground="#d9d9d9")
-        self.Button_calibrate.configure(text='''Calibrate''')
+        self.Button_calibrate.configure(text='''2. Calibrate''')
 
+        self.Label_demag_isntr1 = Label(self.Frame_demag, anchor='w')
+        self.Label_demag_isntr1.place(relx=0.05, rely=0.050, height=18
+                                           , width=275)
+        self.Label_demag_isntr1.configure(activebackground="#f9f9f9")
+        self.Label_demag_isntr1.configure(justify=LEFT)
+        self.Label_demag_isntr1.configure(text='''1. Hold Hall sensor away from any magnetic field''')
+
+        self.Label_demag_isntr2 = Label(self.Frame_demag, anchor='w')
+        self.Label_demag_isntr2.place(relx=0.05, rely=0.400, height=18
+                                     , width=300)
+        self.Label_demag_isntr2.configure(activebackground="#f9f9f9")
+        self.Label_demag_isntr2.configure(justify=LEFT)
+        self.Label_demag_isntr2.configure(text='''3. Hold Hall sensor directly on the tip of the solenoid''')
+
+        self.Label_demag_isntr3 = Label(self.Frame_demag, anchor='w')
+        self.Label_demag_isntr3.place(relx=0.015, rely=0.800, height=18
+                                      , width=335)
+        self.Label_demag_isntr3.configure(activebackground="#f9f9f9")
+        self.Label_demag_isntr3.configure(justify=LEFT)
+        self.Label_demag_isntr3.configure(text='''*Note that there is a 3 second delay after clicking each button''')
+
+        '''DEFAULT VALUES'''
         self.Entry_gtp_x.insert(0, "x")
-        self.Entry_gtp_x.bind("<FocusIn>", lambda args: self.Entry_gtp_x.delete('0', 'end'))
         self.Entry_gtp_y.insert(0, "y")
-        self.Entry_gtp_y.bind("<FocusIn>", lambda args: self.Entry_gtp_y.delete('0', 'end'))
         self.Entry_gtp_z.insert(0, "z")
-        self.Entry_gtp_z.bind("<FocusIn>", lambda args: self.Entry_gtp_z.delete('0', 'end'))
-
-class Controller():
-    def __init__(self,gui_instance, man_instance):
-        self.gui_instance=gui_instance
-        self.man_instance=man_instance
-
-    def status_refresh(self):
-        curPos=self.man_instance.get_current_position(self.man_instance)
-        gui_support.status_pos=curPos   #Update Position
-        gui_support.status_res_v=gui_support.velocity   #Update velocity - Can set status label to entry label (Instant Update)?
-
+        self.Spinbox_step_x.insert(0, 0)
+        self.Spinbox_step_y.insert(0, 0)
+        self.Spinbox_step_z.insert(0, 0)
+        gui_support.radio_pos_mode.set("relative")
+        gui_support.radio_resolution.set("low")
 
 
 # The following code is added to facilitate the Scrolled widgets you specified.

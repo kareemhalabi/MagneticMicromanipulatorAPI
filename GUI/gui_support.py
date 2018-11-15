@@ -42,8 +42,8 @@ def set_Tk_var():
     constant_amps = StringVar()
     global constant_duration
     constant_duration = StringVar()
-    global square_amps
-    square_amps = StringVar()
+    global square_amp
+    square_amp = StringVar()
     global square_duration
     square_duration = StringVar()
     global square_duty
@@ -58,6 +58,14 @@ def set_Tk_var():
     sin_offset = StringVar()
     global sin_duration
     sin_duration = StringVar()
+    global ramping_amp
+    ramping_amp = StringVar()
+    global ramping_rise
+    ramping_rise = StringVar()
+    global ramping_steady
+    ramping_steady = StringVar()
+    global ramping_rest
+    ramping_rest = StringVar()
     global status_pos_v
     status_pos_v = StringVar()
     global status_vel_v
