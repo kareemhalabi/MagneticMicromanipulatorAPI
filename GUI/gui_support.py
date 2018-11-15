@@ -66,6 +66,8 @@ def set_Tk_var():
     ramping_steady = StringVar()
     global ramping_rest
     ramping_rest = StringVar()
+    global ramping_duration
+    ramping_duration = StringVar()
     global status_pos_v
     status_pos_v = StringVar()
     global status_vel_v
