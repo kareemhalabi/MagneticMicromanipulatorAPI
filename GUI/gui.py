@@ -106,7 +106,7 @@ class GUI:
         -INTERPRET MM.STATUS
         -0 DURATION = INDEFINITE?
         -SET VOLTAGE
-        -INPUT VALIDATION
+        -INPUT VALIDATION ISDIGIT DOESNT WORK
         -DURATION (ASK KAREEM)
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         -UPDATE STATUS AFTER EVERY OPERATION        
@@ -153,11 +153,28 @@ class GUI:
             mm.refresh_display()
             self.console_output.insert(1.0, "Status page refreshed\n")
 
+        def is_okay(string):
+            match = re.search('[^0-9.-]', str(string))
+            if match:
+                return True
+            else:
+                if string.count('-') > 1 or string.count('.') > 1:
+                    return True
+                elif string.find('-') != -1 and not(string.startswith('-')):
+                    return True
+                elif string.startswith('.'):
+                    return True
+                elif string.startswith('-') and len(string) == 1:
+                    return True
+                else:
+                    return False
+
         def gtp():
             x = gui_support.gtp_x.get()
             y = gui_support.gtp_y.get()
             z = gui_support.gtp_z.get()
-            if not (str(x).isdigit() or str(y).isdigit() or str(z).isdigit()):
+
+            if (is_okay(x) or is_okay(y) or is_okay(z)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed...\n")
             else:
                 if gui_support.radio_pos_mode.get() == "relative":
@@ -181,7 +198,7 @@ class GUI:
         def step_x():
             xmove = gui_support.step_x.get()
             if not (str(xmove).isdigit()):
-                self.console_output.insert(1.0, "Only numbers are allowed...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Double check formating...\n")
             else:
                 mm.set_mode(Mode.RELATIVE)
                 self.console_output.insert(1.0, "Moving by "+str(x)+"x\n")
@@ -203,15 +220,17 @@ class GUI:
 
         def change_velocity():
             vel = gui_support.velocity.get()
-            if not (str(vel).isdigit()):
+            if is_okay(vel):
                 self.console_output.insert(1.0, "Only numbers are allowed...\n")
+            elif float(vel) <= 0 or float(vel) > 1000:
+                self.console_output.insert(1.0, "Velocity must be positive and less than 1000...\n")
             else:
                 if gui_support.radio_resolution.get() == "low":
                     r = "Resolution.LOW"
                 else:
                     r = "Resolution.HIGH"
 
-                mm.set_velocity(vel, r)
+                mm.set_velocity(float(vel), r)
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
 
         def change_resolution():
@@ -375,8 +394,8 @@ class GUI:
         self.Entry_velocity.configure(textvariable=gui_support.velocity)
 
         self.Spinbox_step_x = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
-        self.Spinbox_step_x.place(relx=0.099, rely=0.508, relheight=0.068
-                                  , relwidth=0.094)
+        self.Spinbox_step_x.place(relx=0.049, rely=0.508, relheight=0.068
+                                  , relwidth=0.134)
         self.Spinbox_step_x.configure(activebackground="#f9f9f9")
         self.Spinbox_step_x.configure(background="white")
         self.Spinbox_step_x.configure(from_="-50.0")
@@ -386,8 +405,8 @@ class GUI:
         self.Spinbox_step_x.configure(to="50.0")
 
         self.Spinbox_step_z = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
-        self.Spinbox_step_z.place(relx=0.099, rely=0.712, relheight=0.068
-                                  , relwidth=0.094)
+        self.Spinbox_step_z.place(relx=0.049, rely=0.712, relheight=0.068
+                                  , relwidth=0.134)
         self.Spinbox_step_z.configure(activebackground="#f9f9f9")
         self.Spinbox_step_z.configure(background="white")
         self.Spinbox_step_z.configure(from_="-50.0")
@@ -397,8 +416,8 @@ class GUI:
         self.Spinbox_step_z.configure(to="50.0")
 
         self.Spinbox_step_y = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
-        self.Spinbox_step_y.place(relx=0.099, rely=0.61, relheight=0.068
-                                  , relwidth=0.094)
+        self.Spinbox_step_y.place(relx=0.049, rely=0.61, relheight=0.068
+                                  , relwidth=0.134)
         self.Spinbox_step_y.configure(activebackground="#f9f9f9")
         self.Spinbox_step_y.configure(background="white")
         self.Spinbox_step_y.configure(from_="-50.0")
