@@ -1,8 +1,10 @@
 import threading
 import time
-from typing import Union
+from typing import Union, List, Tuple
 
 import serial
+
+from api import math_parser
 
 MIN_STEP_PERIOD = 0.1
 
@@ -40,6 +42,14 @@ class PowerSupply:
     def set_voltage(self, voltage: _Num):
         self.serial_conn.write(b'VOLT %f\n' % voltage)
 
+    def get_voltage(self):
+        self.serial_conn.write(b'MEAS:VOLT?\n')
+        return float(self.serial_conn.readline())
+
+    def get_current(self):
+        self.serial_conn.write(b'MEAS:CURR?\n')
+        return float(self.serial_conn.readline())
+
     def set_current(self, current: _Num):
         self.serial_conn.write(b'CURR %f\n' % current)
 
@@ -73,11 +83,35 @@ class PowerSupply:
         if rise_time < MIN_STEP_PERIOD:
             raise ValueError('Period must be at least %d seconds' % MIN_STEP_PERIOD)
 
-        if amplitude < 0:
+        if amplitude <= 0:
             raise ValueError('Amplitude must be positive')
 
         self.wave = _RampWave(self, amplitude, rise_time, steady_time, rest_time)
         self.wave.start()
+
+    def start_sine_wave(self, amplitude: _Num, period: _Num, time_offset: _Num = None, dc_offset: _Num = None):
+
+        if amplitude <= 0:
+            raise ValueError('Amplitude must be positive')
+
+        if dc_offset is None:
+            dc_offset = amplitude
+        elif dc_offset < amplitude:
+            raise ValueError('DC offset must be greater than amplitude')
+
+        if time_offset is None:
+            time_offset = period / 4 # Default is to start the wave at minimum
+
+        if period <= 0:
+            raise ValueError('Period must be greater than 0')
+
+        equation = '%f * sin(6.28318530718 * (t - %f) / %f) + %f' % (amplitude, time_offset, period, dc_offset)
+
+        wave_points = math_parser.parse_equation(equation, 't', (0, period), MIN_STEP_PERIOD)
+
+        self.wave = _ArbitraryWave(self, wave_points)
+        self.wave.start()
+
 
     def stop_wave(self):
         if self.wave is None:
@@ -152,5 +186,33 @@ class _RampWave(threading.Thread):
             self.power_supply.set_current(0.0)
 
             time.sleep(self.rest_time)
+
+        self.power_supply.disable_output()
+
+
+class _ArbitraryWave(threading.Thread):
+
+    def __init__(self, power_supply: PowerSupply, coordinates: List[Tuple[float, float]]):
+        self.power_supply = power_supply
+        self.coordinates = coordinates
+        self.power_supply.disable_output()
+        self.power_supply.set_current(self.coordinates[0][1])
+
+        super().__init__()
+
+    def run(self):
+        self.running = True
+        self.power_supply.enable_output()
+        while self.running:
+
+            for coordinate, next_coordinate in zip(self.coordinates[:-1], self.coordinates[1:]):
+                if not self.running:
+                    break
+                self.power_supply.set_current(coordinate[1])
+                time.sleep(max(MIN_STEP_PERIOD, next_coordinate[0] - coordinate[0]))
+
+            if self.running:
+                self.power_supply.set_current(self.coordinates[-1][1])
+                time.sleep(max(MIN_STEP_PERIOD, self.coordinates[-1][0] - self.coordinates[-2][0]))
 
         self.power_supply.disable_output()
