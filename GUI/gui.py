@@ -99,17 +99,15 @@ class GUI:
         #mm = Manipulator("COM7")
         #supply = PowerSupply("COM10")
 
-
         #TODO
         '''
         -ADD POWER SUPPLY STATUS (AMPS, DURATION, SHAPE, FREQ)
         -INTERPRET MM.STATUS
         -0 DURATION = INDEFINITE?
         -SET VOLTAGE
-        -INPUT VALIDATION ISDIGIT DOESNT WORK
         -DURATION (ASK KAREEM)
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        -UPDATE STATUS AFTER EVERY OPERATION        
+        -UPDATE STATUS AFTER EVERY OPERATION
         '''
 
         def demagnetization():
@@ -150,6 +148,8 @@ class GUI:
             x,y,z = mm.get_current_position()
             gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
             vel = mm.get_status()
+            gui_support.velocity.set(str(vel))
+            res = mm.get_status()
             mm.refresh_display()
             self.console_output.insert(1.0, "Status page refreshed\n")
 
@@ -175,7 +175,7 @@ class GUI:
             z = gui_support.gtp_z.get()
 
             if (is_okay(x) or is_okay(y) or is_okay(z)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
                 if gui_support.radio_pos_mode.get() == "relative":
                     mm.set_mode(Mode.RELATIVE)
@@ -184,9 +184,9 @@ class GUI:
 
                 self.Button_gtp.configure(state="disabled")
                 self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
-                #mm.go_to_position(float(x),float(y),float(z))
+                mm.go_to_position(float(x),float(y),float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
-                #x, y, z = mm.get_current_position()
+                x, y, z = mm.get_current_position()
                 gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
                 self.Button_gtp.configure(state="normal")
                 status_refresh()
@@ -197,31 +197,44 @@ class GUI:
 
         def step_x():
             xmove = gui_support.step_x.get()
-            if not (str(xmove).isdigit()):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Double check formating...\n")
+            if (is_okay(xmove)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
+                self.console_output.insert(1.0, "Moving by "+str(xmove)+"x\n")
                 mm.set_mode(Mode.RELATIVE)
-                self.console_output.insert(1.0, "Moving by "+str(x)+"x\n")
-                x,y,z = mm.get_current_position()
-                mm.go_to_position(float(xmove+x),y,z)
+                x, y, z = mm.get_current_position()
+                mm.go_to_position(float(xmove)+x,y,z)
                 self.console_output.insert(1.0, "Moving complete\n")
+                status_refresh()
 
         def step_y():
-            y = float(gui_support.step_y.get())
-            self.console_output.insert(1.0, "Moving by "+str(y)+"y\n")
-            #TODO call manipulator instance go to position function
-            self.console_output.insert(1.0, "Moving complete\n")
+            ymove = gui_support.step_y.get()
+            if is_okay(ymove):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            else:
+                self.console_output.insert(1.0, "Moving by "+ymove+"y\n")
+                mm.set_mode(Mode.RELATIVE)
+                x, y, z = mm.get_current_position()
+                mm.go_to_position(x, float(ymove) + y, z)
+                self.console_output.insert(1.0, "Move complete\n")
+                status_refresh()
 
         def step_z():
-            z = float(gui_support.step_z.get())
-            self.console_output.insert(1.0, "Moving by "+str(z)+"z\n")
-            #TODO call manipulator instance go to position function
-            self.console_output.insert(1.0, "Moving complete\n")
+            zmove = gui_support.step_z.get()
+            if (is_okay(zmove)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            else:
+                self.console_output.insert(1.0, "Moving by "+str(zmove)+"z\n")
+                mm.set_mode(Mode.RELATIVE)
+                x, y, z = mm.get_current_position()
+                mm.go_to_position(x, y, float(zmove)+z)
+                self.console_output.insert(1.0, "Move complete\n")
+                status_refresh()
 
         def change_velocity():
             vel = gui_support.velocity.get()
             if is_okay(vel):
-                self.console_output.insert(1.0, "Only numbers are allowed...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             elif float(vel) <= 0 or float(vel) > 1000:
                 self.console_output.insert(1.0, "Velocity must be positive and less than 1000...\n")
             else:
