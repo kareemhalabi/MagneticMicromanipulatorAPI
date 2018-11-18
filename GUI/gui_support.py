@@ -82,6 +82,12 @@ def set_Tk_var():
     status_abspos_v = StringVar()
     global radio_pos_mode
     radio_pos_mode = StringVar()
+    global status_current_v
+    status_current_v = StringVar()
+    global status_wave_v
+    status_wave_v = StringVar()
+    global status_duration_v
+    status_duration_v = StringVar()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
