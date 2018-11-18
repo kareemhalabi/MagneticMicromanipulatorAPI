@@ -20,8 +20,7 @@ def calibrate():
 def signum(value):
     return int(value/abs(value))
 
-def demagCurrent():
-    noField = calibrate()
+def demagCurrent(noField):
     
     print('noField: %f' % noField)
     #GPIO setup
@@ -31,7 +30,7 @@ def demagCurrent():
     GPIO.output(6, GPIO.HIGH)
     GPIO.output(5, GPIO.LOW)
     print('Ensuring saturation please wait.')
-    current = 1.5
+    current = 1.5                                                  
     
     ps.set_current(current)
     ps.enable_output()
@@ -63,24 +62,31 @@ def demagCurrent():
         time.sleep(0.03) #this allows for the delay of the ps to turn on before opening the cct
         GPIO.output(6, GPIO.HIGH)
         ps.disable_output()
-        time.sleep(0.1)
+        time.sleep(0.5)#delay for inductance before field reading
         presentField = getField()
             
-        if (abs(presentField - noField) > 0.0004*noField and signum(presentField - noField) == original_sign)== False:
+        if (abs(presentField - noField) > 0.004*noField and signum(presentField - noField) == original_sign)== False:
             break
 			  
         print("Present Field is: " + str(presentField))
+    
+    if (abs(presentField - noField) > 0.004*noField and signum(presentField - noField) != original_sign):
+        print("Overshoot of " + str(abs(presentField-noField)))
+        current = 0.05
+        ps.set_current(current)
+        for i in range(5):
+            GPIO.output(6, GPIO.HIGH)
+            GPIO.output(5, GPIO.LOW)
+            ps.enable_output()
+            ps.disable_output()
+            #time.sleep(0.001)#current duration
+            GPIO.output(5, GPIO.HIGH)
+            time.sleep(0.5)
+            presentField = getField()
+            if  (abs(presentField - noField) > 0.004*noField and (signum(presentField - noField) != original_sign)) == False:
+                break
         
-    if (signum(presentField - noField) != original_sign):
-        GPIO.output(6, GPIO.HIGH)
-        GPIO.output(5, GPIO.LOW)
-        input("Overshoot of " + str(abs(presentField-noField)) + ": Press enter to start compensating...")
-        time.sleep(0.1)
-        ps.enable_output()
-        time.sleep(0.025)
-        GPIO.output(5, GPIO.HIGH)
-        
-    time.sleep(0.5)
+    time.sleep(1)
     presentField = getField()
     print("Final Field is: " + str(presentField))
     print("Off by: " + str(presentField-noField))
