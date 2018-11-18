@@ -28,7 +28,7 @@ import serial.tools.list_ports
 
 from api.manipulator import *
 from api.power_supply import *
-from threading import Timer,Thread,Event
+from threading import *
 #from Demagnetization.demag import *
 
 def vp_start_gui():
@@ -101,33 +101,28 @@ class GUI:
 
         #TODO
         '''
-        -ADD POWER SUPPLY STATUS (AMPS, DURATION, SHAPE, FREQ)
-        -INTERPRET MM.STATUS
-        -0 DURATION = INDEFINITE?
+        -SET INPUT LIMITATIONS
+        -Call refresh display when initializing
         -SET VOLTAGE
-        -DURATION (ASK KAREEM)
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        -UPDATE STATUS AFTER EVERY OPERATION
         '''
 
         def demagnetization():
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
             #TODO demagnetization call
-            #possibly callibration button
-            #So your code should be something like label1.text = first int
-            #Ditto label 2
-            #If returned int == -1 (failed)
-            #Display message box
             time.sleep(3)
             demagCurrent(zero_field)
-            self.console_output.insert(1.0, "Demagnetization complete\n")
+            r_field = getField()
+            status_refresh()
+            self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
             self.console_output.insert(1.0, "Calibration in progress...\n")
             time.sleep(3)
             global zero_field
             zero_field = calibrate()
-            self.console_output.insert(1.0, "Calibration complete\n")
+            status_refresh()
+            self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def popupmsg(msg):
             popup = Tk()
@@ -140,17 +135,21 @@ class GUI:
 
         def status_refresh():
             #TODO Refresh all value labels (mm.getstatus, mm.getposition)
-            #TODO change LABEL to better fit the position output
             mm.set_mode(Mode.ABSOLUTE)
             x, y, z = mm.get_current_position()
             gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
             mm.set_mode(Mode.RELATIVE)
             x,y,z = mm.get_current_position()
             gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
-            vel = mm.get_status()
+            mm_status_dict = mm.get_status()
+            vel = mm_status_dict['XSPEED']
             gui_support.velocity.set(str(vel))
-            res = mm.get_status()
+            res = mm_status_dict['XSPEED_RES']
+            gui_support.status_res_v.set(str(res))
+            gui_support.status_current_v.set(str(supply.get_current()))
+            gui_support.status_magfield_v.set(str(getField()))
             mm.refresh_display()
+            self.console_output.insert(1.0, str(mm_status_dict))
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def is_okay(string):
@@ -158,7 +157,9 @@ class GUI:
             if match:
                 return True
             else:
-                if string.count('-') > 1 or string.count('.') > 1:
+                if not string:
+                    return True
+                elif string.count('-') > 1 or string.count('.') > 1:
                     return True
                 elif string.find('-') != -1 and not(string.startswith('-')):
                     return True
@@ -193,6 +194,7 @@ class GUI:
 
         def origin():
             mm.set_origin()
+            status_refresh()
             self.console_output.insert(1.0, "Origin set\n")
 
         def step_x():
@@ -245,6 +247,7 @@ class GUI:
 
                 mm.set_velocity(float(vel), r)
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
+                status_refresh()
 
         def change_resolution():
             '''just use change velocity?'''
@@ -252,8 +255,8 @@ class GUI:
         def master_stop():
             supply_interupt()
             mm_interupt()
+            gui_support.status_duration_v.set("0")
             self.console_output.insert(1.0, "All processes stopped\n")
-            #TODO reset configurations?
 
         def mm_interupt():
             mm.interrupt()
@@ -262,12 +265,15 @@ class GUI:
         def supply_interupt():
             supply.disable_output()
             supply.stop_wave()
+            gui_support.status_duration_v.set("0")
             self.console_output.insert(1.0, "Power supply interrupted\n")
 
         def stop():
             supply.disable_output()
+            gui_support.status_duration_v.set("0")
             #need to stop square/sin/ramp individually?
             self.console_output.insert(1.0, "Power supply output disabled\n")
+            status_refresh()
 
         def disable_interface():
             #TODO disable all user interaction (buttons). Typically used when waiting for a mm move to finish
@@ -279,50 +285,81 @@ class GUI:
             '''last'''
 
         def constant_run():
-            duration = float(gui_support.square_duration.get())
-            current = float(gui_support.constant_amps.get())
-            #TODO INCORPORATE DURATION
-            supply.set_current(current)
-            supply.enable_output()
+            duration = gui_support.constant_duration.get()
+            current = gui_support.constant_amps.get()
+            if (is_okay(duration) or is_okay(current)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            elif float(duration) <= 0:
+                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            else:
+                supply.set_current(float(current))
+                supply.enable_output()
+                gui_support.status_wave_v.set("Constant")
+                gui_support.status_duration_v.set(str(duration))
+                duration_thread.start()
+                self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s...\n")
+                status_refresh()
 
         def square_run():
-            # TODO
-            current = float(gui_support.square_amp.get())
-            freq = float(gui_support.square_freq.get())
-            duty = float(gui_support.square_duty.get())
-            duration = float(gui_support.square_duration.get())
-            supply.start_square_wave(current,1/freq,duty/100)
-            self.console_output.insert(1.0, "Running square wave...")
+            current = gui_support.square_amp.get()
+            freq = gui_support.square_freq.get()
+            duty = gui_support.square_duty.get()
+            duration = gui_support.square_duration.get()
+            if (is_okay(duration) or is_okay(current) or is_okay(freq) or is_okay(duty)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            elif float(duration) <= 0:
+                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            else:
+                supply.start_square_wave(float(current),float(1/freq),float(duty/100))
+                gui_support.status_wave_v.set("Square")
+                gui_support.status_duration_v.set(str(duration))
+                duration_thread.start()
+                self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s...\n")
+                status_refresh()
 
         def sinusoidal_run():
-            # TODO
-            amplitude = float(gui_support.sin_amplitude.get())
-            offset = float(gui_support.sin_offset.get())
-            freq = float(gui_support.sin_freq.get())
-            duration = float(gui_support.sin_duration.get())
-            #supply.
-            self.console_output.insert(1.0, "Running sinusoidal wave...")
+            amplitude = gui_support.sin_amplitude.get()
+            offset = gui_support.sin_offset.get()
+            freq = gui_support.sin_freq.get()
+            duration = gui_support.sin_duration.get()
+            if (is_okay(duration) or is_okay(amplitude) or is_okay(freq) or is_okay(offset)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            elif float(duration) <= 0:
+                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            else:
+                supply.start_sine_wave(float(amplitude), float(1/freq), None, float(offset))
+                gui_support.status_wave_v.set("Sinusoidal")
+                gui_support.status_duration_v.set(str(duration))
+                duration_thread.start()
+                self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s...\n")
+                status_refresh()
 
         def ramping_run():
-            #TODO
-            amplitude = float(gui_support.ramping_amp.get())
-            rise = float(gui_support.ramping_rise.get())
-            steady = float(gui_support.ramping_steady.get())
-            rest = float(gui_support.ramping_rest.get())
-            supply.start_ramp_wave(amplitude, rise, steady, rest)
-            self.console_output.insert(1.0, "Running ramping wave...")
-
-        def validate():
-            # https://stackoverflow.com/questions/4140437/interactively-validating-entry-widget-content-in-tkinter
-            #, validate="all", validatecommand=lambda: validate()
-            #shit aint working
-            t = gui_support.gtp_x.get()
-            if t.isdigit() or len(t)==0:
-                return True
+            amplitude = gui_support.ramping_amp.get()
+            rise = gui_support.ramping_rise.get()
+            steady = gui_support.ramping_steady.get()
+            rest = gui_support.ramping_rest.get()
+            duration = gui_support.ramping_duration.get()
+            if (is_okay(duration) or is_okay(amplitude) or is_okay(rise) or is_okay(steady) or is_okay(rest)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+            elif float(duration) <= 0:
+                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
             else:
-                t = t[0:-1]
-                gui_support.gtp_x.set(t)
-                return False
+                supply.start_ramp_wave(float(amplitude), float(rise), float(steady), float(rest))
+                gui_support.status_wave_v.set("Ramping")
+                gui_support.status_duration_v.set(str(duration))
+                duration_thread.start()
+                self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
+                status_refresh()
+
+        def duration_timer():
+            duration = float(gui_support.status_duration_v.get())
+            while duration > 0:
+                if(float(gui_support.status_duration_v.get()) <= 0):
+                    break
+                self.console_output.insert(1.0, "Remaining duration: " + str(duration)+"\n")
+                time.sleep(1)
+                duration = duration-1
 
 
         self.MM_Frame = Frame(top)
@@ -798,7 +835,7 @@ class GUI:
 
         self.Label_status_abspos_v = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos_v.place(relx=0.58, rely=0.114, height=18
-                                         , width=39)
+                                         , width=160)
         self.Label_status_abspos_v.configure(text='''Value''')
         self.Label_status_abspos_v.configure(textvariable=gui_support.status_abspos_v)
 
@@ -856,6 +893,46 @@ class GUI:
         self.Label_status_magfield_v.configure(justify=LEFT)
         self.Label_status_magfield_v.configure(text='''Value''')
         self.Label_status_magfield_v.configure(textvariable=gui_support.status_magfield_v)
+
+        self.Label_status_current = Label(self.Status_Frame)
+        self.Label_status_current.place(relx=0.058, rely=0.307, height=18
+                , width=77)
+        self.Label_status_current.configure(anchor='w')
+        self.Label_status_current.configure(text='''Current (A):''')
+
+        self.Label_status_current_v = Label(self.Status_Frame)
+        self.Label_status_current_v.place(relx=0.319, rely=0.307, height=18
+                , width=97)
+        self.Label_status_current_v.configure(anchor='w')
+        self.Label_status_current_v.configure(text='''Value''')
+        self.Label_status_current_v.configure(textvariable=gui_support.status_current_v)
+        self.Label_status_current_v.configure(width=97)
+
+        self.Label_status_wave = Label(self.Status_Frame)
+        self.Label_status_wave.place(relx=0.058, rely=0.268, height=18, width=69)
+        self.Label_status_wave.configure(anchor='w')
+        self.Label_status_wave.configure(text='''Waveform:''')
+
+        self.Label_status_wave_v = Label(self.Status_Frame)
+        self.Label_status_wave_v.place(relx=0.329, rely=0.268, height=18, width=107)
+
+        self.Label_status_wave_v.configure(anchor='w')
+        self.Label_status_wave_v.configure(text='''Value''')
+        self.Label_status_wave_v.configure(textvariable=gui_support.status_wave_v)
+        self.Label_status_wave_v.configure(width=107)
+
+        self.Label_status_duration = Label(self.Status_Frame)
+        self.Label_status_duration.place(relx=0.058, rely=0.346, height=18
+                , width=83)
+        self.Label_status_duration.configure(anchor='w')
+        self.Label_status_duration.configure(text='''Duration (s):''')
+
+        self.Label_status_duration_v = Label(self.Status_Frame)
+        self.Label_status_duration_v.place(relx=0.319, rely=0.346, height=18
+                , width=37)
+        self.Label_status_duration_v.configure(anchor='w')
+        self.Label_status_duration_v.configure(text='''Label''')
+        self.Label_status_duration_v.configure(textvariable=gui_support.status_duration_v)
 
         self.Button_status_refresh = Button(self.Status_Frame, command=lambda: status_refresh())
         self.Button_status_refresh.place(relx=0.754, rely=0.019, height=26
@@ -947,6 +1024,15 @@ class GUI:
         gui_support.constant_amps.set("1")
         gui_support.constant_duration.set("10")
         gui_support.velocity.set("1000")
+        gui_support.status_relpos_v.set("0x 0y 0z")
+        gui_support.status_abspos_v.set("0x 0y 0z")
+        gui_support.status_magfield_v.set("0")
+        gui_support.status_current_v.set("0")
+        gui_support.status_duration_v.set("0")
+        gui_support.status_res_v.set("Low")
+        gui_support.status_vel_v.set("500")
+        gui_support.status_wave_v.set("Constant")
+        duration_thread = Thread(target=duration_timer)
 
 
 
@@ -1024,6 +1110,7 @@ class ScrolledText(AutoScroll, Text):
     def __init__(self, master, **kw):
         Text.__init__(self, master, **kw)
         AutoScroll.__init__(self, master)
+
 
 if __name__ == '__main__':
     vp_start_gui()
