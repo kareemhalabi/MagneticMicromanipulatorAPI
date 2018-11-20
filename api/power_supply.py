@@ -5,6 +5,7 @@ from typing import Union, List, Tuple
 import serial
 
 from api import math_parser
+from api.relay import Relay
 
 MIN_STEP_PERIOD = 0.1
 
@@ -13,9 +14,12 @@ _Num = Union[int, float]
 
 class PowerSupply:
 
-    def __init__(self, comm_port: str):
+    def __init__(self, comm_port: str, relay_1: Relay, relay_2: Relay):
         self.serial_conn = serial.Serial(comm_port, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_TWO)
+
+        self.relay_1 = relay_1
+        self.relay_2 = relay_2
 
         self.serial_conn.write(b'*IDN?\n')
         print(self.serial_conn.readline().decode('ascii'))
@@ -33,11 +37,26 @@ class PowerSupply:
 
         self.serial_conn.write(b'OUTP ' + output_str + b'\n')
 
-    def enable_output(self):
+    def enable_output(self, relay_forward = True):
+
+        if relay_forward is not None:
+            if relay_forward:
+                self.relay_1.vcc()
+                self.relay_2.gnd()
+            else:
+                self.relay_1.gnd()
+                self.relay_2.vcc()
+
         self._toggle_output(True)
 
-    def disable_output(self):
+    def disable_output(self, disable_relay: bool = True):
+
         self._toggle_output(False)
+
+        if disable_relay:
+            self.relay_1.gnd()
+            self.relay_2.gnd()
+
 
     def set_voltage(self, voltage: _Num):
         self.serial_conn.write(b'VOLT %f\n' % voltage)

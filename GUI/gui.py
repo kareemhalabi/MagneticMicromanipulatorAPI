@@ -6,8 +6,11 @@
 #    Nov 05, 2018 02:38:38 AM EST  platform: Linux
 
 import os,sys
+current_directory = os.getcwd()
+parent_directory = os.path.dirname(current_directory)
+sys.path.insert(0, parent_directory)
 
-from api.demagnitizer import Demagnitizer
+from api.demagnetizer import Demagnetizer
 
 try:
     from Tkinter import *
@@ -89,10 +92,12 @@ class GUI:
         #TODO VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         ports = list(serial.tools.list_ports.comports())
 
-        
-        supply = PowerSupply("/dev/ttyUSB0")
+        relay_1 = Relay(5)
+        relay_2 = Relay(6)
+
+        supply = PowerSupply("/dev/ttyUSB0", relay_1, relay_2)
         mm = Manipulator("/dev/ttyUSB1")
-        demagnitizer = Demagnitizer(supply)
+        demagnetizer = Demagnetizer(supply, relay_1, relay_2)
         
 
         #TODO 
@@ -107,8 +112,8 @@ class GUI:
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
             #TODO demagnetization call
             time.sleep(3)
-            demagnitizer.demag_current(zero_field)
-            r_field = demagnitizer.get_field()
+            demagnetizer.demag_current(zero_field)
+            r_field = demagnetizer.get_field()
 
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
@@ -116,7 +121,7 @@ class GUI:
             self.console_output.insert(1.0, "Calibration in progress...\n")
             time.sleep(3)
             global zero_field
-            zero_field = demagnitizer.calibrate()
+            zero_field = demagnetizer.calibrate()
             ##
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
@@ -352,11 +357,13 @@ class GUI:
             duration = float(gui_support.status_duration_v.get())
             while duration > 0:
                 if(float(gui_support.status_duration_v.get()) <= 0):
+                    supply.disable_output()
                     break
                 self.console_output.insert(1.0, "Remaining duration: " + str(duration)+"\n")
                 time.sleep(1)
                 duration = duration-1
 
+            supply.disable_output()
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)

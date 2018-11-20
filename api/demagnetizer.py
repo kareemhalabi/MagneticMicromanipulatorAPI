@@ -5,30 +5,25 @@ import RPi.GPIO as GPIO
 import Adafruit_ADS1x15
 
 from api.power_supply import PowerSupply
+from api.relay import Relay
 
 
 def signnum(value):
-    return int(value/abs(value)) if value != 0 else 0
+    return int(value / abs(value)) if value != 0 else 0
 
-class Demagnitizer():
+
+class Demagnetizer:
     GAIN = 2
     TRIALS = 10
 
-    def __init__(self, ps: PowerSupply,  hall_sensor_pin: int = 0, relay1_pin: int = 5, relay2_pin: int = 6):
+    def __init__(self, ps: PowerSupply, relay_1: Relay, relay_2: Relay, hall_sensor_pin: int = 0):
         self.ps = ps
 
         self.hall_sensor_pin = hall_sensor_pin
         self.adc = Adafruit_ADS1x15.ADS1115()
 
-        self.relay1_pin = relay1_pin
-        self.relay2_pin = relay2_pin
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(relay1_pin, GPIO.OUT)
-        GPIO.setup(relay2_pin, GPIO.OUT)
-
-    def __del__(self):
-        GPIO.cleanup()
+        self.relay_1 = relay_1
+        self.relay_2 = relay_2
 
     def get_field(self, difference=False) -> int:
         """
@@ -38,11 +33,11 @@ class Demagnitizer():
         """
         readings = []
 
-        for i in range(Demagnitizer.TRIALS):
+        for i in range(Demagnetizer.TRIALS):
             if difference:
-                readings.append(self.adc.read_adc_difference(self.hall_sensor_pin, gain=Demagnitizer.GAIN))
+                readings.append(self.adc.read_adc_difference(self.hall_sensor_pin, gain=Demagnetizer.GAIN))
             else:
-                readings.append(self.adc.read_adc(self.hall_sensor_pin, gain=Demagnitizer.GAIN))
+                readings.append(self.adc.read_adc(self.hall_sensor_pin, gain=Demagnetizer.GAIN))
 
         mean = statistics.mean(readings)
         deviation = statistics.stdev(readings)
@@ -70,7 +65,7 @@ class Demagnitizer():
                 return -1
         return int(value / trials)
 
-    def calibrate(self, trials = 20) -> int:
+    def calibrate(self, trials=20) -> int:
         """
         Gets the no-field reading from the Hall Sensor
         :param trials: Number of trials
@@ -93,17 +88,11 @@ class Demagnitizer():
         """
         print("No Field Value: %f" % no_field)
 
-        GPIO.output(self.relay1_pin, GPIO.LOW)
-        GPIO.output(self.relay2_pin, GPIO.HIGH)
-
         print('Ensuring saturation please wait.')
         self.ps.set_current(saturation_current)
         self.ps.enable_output()
         time.sleep(10)
         self.ps.disable_output()
-
-        GPIO.output(self.relay1_pin, GPIO.LOW)
-        GPIO.output(self.relay2_pin, GPIO.HIGH)
 
         present_field = self.get_field()
         original_sign = signnum(present_field - no_field)
@@ -116,19 +105,20 @@ class Demagnitizer():
 
         for i in range(15):
             print("The 0-field value is: %d" % no_field)
-            GPIO.output(self.relay2_pin, GPIO.LOW)
+            self.relay_2.vcc()
             time.sleep(0.1)
-            self.ps.enable_output()
-            time.sleep(0.3) # This allows for the delay of the ps to turn on before opening the circuit
-            GPIO.output(self.relay2_pin, GPIO.HIGH)
-            self.ps.disable_output()
-            time.sleep(0.5) # Delay for inductance before field reading
+            self.ps.enable_output(relay_forward=None)
+            time.sleep(0.3)  # This allows for the delay of the ps to turn on before opening the circuit
+            self.relay_2.gnd()
+            self.ps.disable_output(disable_relay=False)
+            time.sleep(0.5)  # Delay for inductance before field reading
 
             present_field = self.get_field()
 
             print('Present Field: %f' % present_field)
 
-            if abs(present_field - no_field) > termination_threshold*no_field and signnum(present_field - no_field) != original_sign:
+            if abs(present_field - no_field) > termination_threshold * no_field and signnum(
+                    present_field - no_field) != original_sign:
                 overshoot = True
                 break
 
@@ -137,14 +127,11 @@ class Demagnitizer():
             self.ps.set_current(demag_current)
 
             for i in range(5):
-                GPIO.output(self.relay1_pin, GPIO.LOW)
-                GPIO.output(self.relay2_pin, GPIO.HIGH)
 
                 self.ps.enable_output()
                 self.ps.disable_output()
 
-                GPIO.output(self.relay1_pin, GPIO.HIGH)
-                time.sleep(0.5) # Delay for inductance before field reading
+                time.sleep(0.5)  # Delay for inductance before field reading
 
                 present_field = self.get_field()
 
