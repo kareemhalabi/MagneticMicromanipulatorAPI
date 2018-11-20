@@ -93,6 +93,7 @@ class Demagnetizer:
         self.ps.enable_output()
         time.sleep(10)
         self.ps.disable_output()
+        time.sleep(10)
 
         present_field = self.get_field()
         original_sign = signnum(present_field - no_field)
