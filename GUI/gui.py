@@ -9,7 +9,7 @@ import os,sys
 current_directory = os.getcwd()
 parent_directory = os.path.dirname(current_directory)
 sys.path.insert(0, parent_directory)
-sys.path.append(parent_directory+'\Demagnetization')
+sys.path.append(parent_directory+'/Demagnetization')
 
 try:
     from Tkinter import *
@@ -29,7 +29,7 @@ import serial.tools.list_ports
 from api.manipulator import *
 from api.power_supply import *
 from threading import *
-#from Demagnetization.demag import *
+from Demagnetization.demag import *
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -91,15 +91,13 @@ class GUI:
         #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
         #TODO VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p)
-            if "manipulator" in p[1]:
-                print("This is an Arduino!")
 
-        #mm = Manipulator("COM7")
-        #supply = PowerSupply("COM10")
+        
+        supply = PowerSupply("/dev/ttyUSB0")
+        mm = Manipulator("/dev/ttyUSB1")
+        
 
-        #TODO
+        #TODO 
         '''
         -SET INPUT LIMITATIONS
         -Call refresh display when initializing
@@ -113,7 +111,8 @@ class GUI:
             time.sleep(3)
             demagCurrent(zero_field)
             r_field = getField()
-            status_refresh()
+            relay_switch(2)
+            ##
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
@@ -121,7 +120,7 @@ class GUI:
             time.sleep(3)
             global zero_field
             zero_field = calibrate()
-            status_refresh()
+            ##
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def popupmsg(msg):
@@ -146,8 +145,9 @@ class GUI:
             gui_support.velocity.set(str(vel))
             res = mm_status_dict['XSPEED_RES']
             gui_support.status_res_v.set(str(res))
-            gui_support.status_current_v.set(str(supply.get_current()))
-            gui_support.status_magfield_v.set(str(getField()))
+            c=supply.get_current()
+            gui_support.status_current_v.set(str(c))
+            #gui_support.status_magfield_v.set(str(getField()))
             mm.refresh_display()
             self.console_output.insert(1.0, str(mm_status_dict))
             self.console_output.insert(1.0, "Status page refreshed\n")
@@ -188,13 +188,13 @@ class GUI:
                 mm.go_to_position(float(x),float(y),float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
                 x, y, z = mm.get_current_position()
-                gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
+                #gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
                 self.Button_gtp.configure(state="normal")
-                status_refresh()
+                #
 
         def origin():
             mm.set_origin()
-            status_refresh()
+            #
             self.console_output.insert(1.0, "Origin set\n")
 
         def step_x():
@@ -207,7 +207,7 @@ class GUI:
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(float(xmove)+x,y,z)
                 self.console_output.insert(1.0, "Moving complete\n")
-                status_refresh()
+                #
 
         def step_y():
             ymove = gui_support.step_y.get()
@@ -219,7 +219,7 @@ class GUI:
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(x, float(ymove) + y, z)
                 self.console_output.insert(1.0, "Move complete\n")
-                status_refresh()
+                #
 
         def step_z():
             zmove = gui_support.step_z.get()
@@ -231,7 +231,7 @@ class GUI:
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(x, y, float(zmove)+z)
                 self.console_output.insert(1.0, "Move complete\n")
-                status_refresh()
+                #
 
         def change_velocity():
             vel = gui_support.velocity.get()
@@ -241,13 +241,12 @@ class GUI:
                 self.console_output.insert(1.0, "Velocity must be positive and less than 1000...\n")
             else:
                 if gui_support.radio_resolution.get() == "low":
-                    r = "Resolution.LOW"
+                    mm.set_velocity(float(vel), Resolution.LOW)
                 else:
-                    r = "Resolution.HIGH"
-
-                mm.set_velocity(float(vel), r)
+                    mm.set_velocity(float(vel), Resolution.HIGH)
+                    
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
-                status_refresh()
+                #
 
         def change_resolution():
             '''just use change velocity?'''
@@ -273,7 +272,7 @@ class GUI:
             gui_support.status_duration_v.set("0")
             #need to stop square/sin/ramp individually?
             self.console_output.insert(1.0, "Power supply output disabled\n")
-            status_refresh()
+            #
 
         def disable_interface():
             #TODO disable all user interaction (buttons). Typically used when waiting for a mm move to finish
@@ -298,7 +297,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s...\n")
-                status_refresh()
+                ##
 
         def square_run():
             current = gui_support.square_amp.get()
@@ -315,7 +314,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s...\n")
-                status_refresh()
+                #
 
         def sinusoidal_run():
             amplitude = gui_support.sin_amplitude.get()
@@ -332,7 +331,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s...\n")
-                status_refresh()
+                #
 
         def ramping_run():
             amplitude = gui_support.ramping_amp.get()
@@ -350,7 +349,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
-                status_refresh()
+                #
 
         def duration_timer():
             duration = float(gui_support.status_duration_v.get())
@@ -830,12 +829,12 @@ class GUI:
 
         self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
-                                       , width=150)
+                                       , width=100)
         self.Label_status_abspos.configure(text='''Absolute Position (um):''')
 
         self.Label_status_abspos_v = Label(self.Status_Frame, anchor='w')
-        self.Label_status_abspos_v.place(relx=0.58, rely=0.114, height=18
-                                         , width=160)
+        self.Label_status_abspos_v.place(relx=0.4, rely=0.114, height=18
+                                         , width=125)
         self.Label_status_abspos_v.configure(text='''Value''')
         self.Label_status_abspos_v.configure(textvariable=gui_support.status_abspos_v)
 
@@ -879,7 +878,7 @@ class GUI:
         self.Label_status_vel_v.configure(textvariable=gui_support.status_vel_v)
 
         self.Label_status_res_v = Label(self.Status_Frame, anchor='w')
-        self.Label_status_res_v.place(relx=0.319, rely=0.19, height=18, width=39)
+        self.Label_status_res_v.place(relx=0.319, rely=0.19, height=18, width=90)
 
         self.Label_status_res_v.configure(activebackground="#f9f9f9")
         self.Label_status_res_v.configure(justify=LEFT)
@@ -993,7 +992,7 @@ class GUI:
         self.Label_demag_isntr2.configure(text='''3. Hold Hall sensor directly on the tip of the solenoid''')
 
         self.Label_demag_isntr3 = Label(self.Frame_demag, anchor='w')
-        self.Label_demag_isntr3.place(relx=0.015, rely=0.800, height=18
+        self.Label_demag_isntr3.place(relx=0.015, rely=0.820, height=18
                                       , width=335)
         self.Label_demag_isntr3.configure(activebackground="#f9f9f9")
         self.Label_demag_isntr3.configure(justify=LEFT)
