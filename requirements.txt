@@ -1,2 +1,5 @@
+Adafruit-ADS1x15==1.0.2
+Adafruit-GPIO==1.0.3
+Adafruit-PureIO==0.2.3
 cexprtk==0.3.3
 pyserial==3.4

@@ -6,10 +6,8 @@
 #    Nov 05, 2018 02:38:38 AM EST  platform: Linux
 
 import os,sys
-current_directory = os.getcwd()
-parent_directory = os.path.dirname(current_directory)
-sys.path.insert(0, parent_directory)
-sys.path.append(parent_directory+'/Demagnetization')
+
+from api.demagnitizer import Demagnitizer
 
 try:
     from Tkinter import *
@@ -29,7 +27,6 @@ import serial.tools.list_ports
 from api.manipulator import *
 from api.power_supply import *
 from threading import *
-from Demagnetization.demag import *
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -95,6 +92,7 @@ class GUI:
         
         supply = PowerSupply("/dev/ttyUSB0")
         mm = Manipulator("/dev/ttyUSB1")
+        demagnitizer = Demagnitizer(supply)
         
 
         #TODO 
@@ -109,17 +107,16 @@ class GUI:
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
             #TODO demagnetization call
             time.sleep(3)
-            demagCurrent(zero_field)
-            r_field = getField()
-            relay_switch(2)
-            ##
+            demagnitizer.demag_current(zero_field)
+            r_field = demagnitizer.get_field()
+
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
             self.console_output.insert(1.0, "Calibration in progress...\n")
             time.sleep(3)
             global zero_field
-            zero_field = calibrate()
+            zero_field = demagnitizer.calibrate()
             ##
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
