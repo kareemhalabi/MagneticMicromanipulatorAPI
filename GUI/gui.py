@@ -114,7 +114,6 @@ class GUI:
             time.sleep(3)
             demagnetizer.demag_current(zero_field)
             r_field = demagnetizer.get_field()
-
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
@@ -122,7 +121,6 @@ class GUI:
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
-            ##
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def popupmsg(msg):
@@ -149,7 +147,7 @@ class GUI:
             gui_support.status_res_v.set(str(res))
             c=supply.get_current()
             gui_support.status_current_v.set(str(c))
-            #gui_support.status_magfield_v.set(str(getField()))
+            gui_support.status_magfield_v.set(str(demagnetizer.get_field()))
             mm.refresh_display()
             self.console_output.insert(1.0, str(mm_status_dict))
             self.console_output.insert(1.0, "Status page refreshed\n")
@@ -190,13 +188,12 @@ class GUI:
                 mm.go_to_position(float(x),float(y),float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
                 x, y, z = mm.get_current_position()
-                #gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
+                gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
                 self.Button_gtp.configure(state="normal")
-                #
+
 
         def origin():
             mm.set_origin()
-            #
             self.console_output.insert(1.0, "Origin set\n")
 
         def step_x():
