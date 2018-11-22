@@ -89,28 +89,28 @@ class GUI:
         top.configure(menu = self.menubar)
 
         #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
-        #TODO VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         ports = list(serial.tools.list_ports.comports())
 
         relay_1 = Relay(5)
         relay_2 = Relay(6)
 
+        mm = None
         supply = PowerSupply("/dev/ttyUSB0", relay_1, relay_2)
-        mm = Manipulator("/dev/ttyUSB1")
+        for p in ports:
+            if "/dev/ttyUSB1" in p:
+                mm = Manipulator("/dev/ttyUSB1")
+
         demagnetizer = Demagnetizer(supply, relay_1, relay_2)
         
 
         #TODO 
         '''
         -SET INPUT LIMITATIONS
-        -Call refresh display when initializing
-        -SET VOLTAGE
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         '''
 
         def demagnetization():
             self.console_output.insert(1.0, "Demagnetization in progress...\n")
-            #TODO demagnetization call
             time.sleep(3)
             demagnetizer.demag_current(zero_field)
             r_field = demagnetizer.get_field()
@@ -123,33 +123,24 @@ class GUI:
             zero_field = demagnetizer.calibrate()
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
-        def popupmsg(msg):
-            popup = Tk()
-            popup.wm_title("!")
-            label = Label(popup, text=msg)
-            label.pack(side="top", fill="x", pady=10)
-            B1 = ttk.Button(popup, text="Okay", command=popup.destroy)
-            B1.pack()
-            popup.mainloop()
-
         def status_refresh():
-            #TODO Refresh all value labels (mm.getstatus, mm.getposition)
-            mm.set_mode(Mode.ABSOLUTE)
-            x, y, z = mm.get_current_position()
-            gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
-            mm.set_mode(Mode.RELATIVE)
-            x,y,z = mm.get_current_position()
-            gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
-            mm_status_dict = mm.get_status()
-            vel = mm_status_dict['XSPEED']
-            gui_support.velocity.set(str(vel))
-            res = mm_status_dict['XSPEED_RES']
-            gui_support.status_res_v.set(str(res))
-            c=supply.get_current()
+            if mm != None:
+                mm.set_mode(Mode.ABSOLUTE)
+                x, y, z = mm.get_current_position()
+                gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
+                mm.set_mode(Mode.RELATIVE)
+                x,y,z = mm.get_current_position()
+                gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
+                mm_status_dict = mm.get_status()
+                vel = mm_status_dict['XSPEED']
+                gui_support.velocity.set(str(vel))
+                res = mm_status_dict['XSPEED_RES']
+                gui_support.status_res_v.set(str(res))
+                mm.refresh_display()
+
+            c=round(supply.get_current(),4)
             gui_support.status_current_v.set(str(c))
             gui_support.status_magfield_v.set(str(demagnetizer.get_field()))
-            mm.refresh_display()
-            self.console_output.insert(1.0, str(mm_status_dict))
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def is_okay(string):
@@ -245,10 +236,6 @@ class GUI:
                     mm.set_velocity(float(vel), Resolution.HIGH)
                     
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
-                #
-
-        def change_resolution():
-            '''just use change velocity?'''
 
         def master_stop():
             supply_interupt()
@@ -271,11 +258,6 @@ class GUI:
             gui_support.status_duration_v.set("0")
             #need to stop square/sin/ramp individually?
             self.console_output.insert(1.0, "Power supply output disabled\n")
-            #
-
-        def disable_interface():
-            #TODO disable all user interaction (buttons). Typically used when waiting for a mm move to finish
-            '''does this work'''
 
         def pathing():
             #three entries, one for each axis
@@ -294,6 +276,7 @@ class GUI:
                 supply.enable_output()
                 gui_support.status_wave_v.set("Constant")
                 gui_support.status_duration_v.set(str(duration))
+                duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s...\n")
                 ##
@@ -308,9 +291,10 @@ class GUI:
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
             else:
-                supply.start_square_wave(float(current),float(1/freq),float(duty/100))
+                supply.start_square_wave(float(current),1/float(freq),float(duty)/100)
                 gui_support.status_wave_v.set("Square")
                 gui_support.status_duration_v.set(str(duration))
+                duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s...\n")
                 #
@@ -325,9 +309,10 @@ class GUI:
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
             else:
-                supply.start_sine_wave(float(amplitude), float(1/freq), None, float(offset))
+                supply.start_sine_wave(float(amplitude), 1/float(freq), None, float(offset))
                 gui_support.status_wave_v.set("Sinusoidal")
                 gui_support.status_duration_v.set(str(duration))
+                duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s...\n")
                 #
@@ -346,6 +331,7 @@ class GUI:
                 supply.start_ramp_wave(float(amplitude), float(rise), float(steady), float(rest))
                 gui_support.status_wave_v.set("Ramping")
                 gui_support.status_duration_v.set(str(duration))
+                duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
                 #
@@ -355,11 +341,13 @@ class GUI:
             while duration > 0:
                 if(float(gui_support.status_duration_v.get()) <= 0):
                     supply.disable_output()
+                    supply.stop_wave()
                     break
                 self.console_output.insert(1.0, "Remaining duration: " + str(duration)+"\n")
                 time.sleep(1)
                 duration = duration-1
 
+            supply.stop_wave()
             supply.disable_output()
 
         self.MM_Frame = Frame(top)
@@ -1000,6 +988,10 @@ class GUI:
         self.Label_demag_isntr3.configure(text='''*Note that there is a 3 second delay after clicking each button''')
 
         '''DEFAULT VALUES'''
+        if mm == None:
+            for child in self.MM_Frame.winfo_children():
+                child.configure(state = 'disable')
+
         self.Entry_gtp_x.insert(0, "x")
         self.Entry_gtp_y.insert(0, "y")
         self.Entry_gtp_z.insert(0, "z")
@@ -1032,7 +1024,8 @@ class GUI:
         gui_support.status_res_v.set("Low")
         gui_support.status_vel_v.set("500")
         gui_support.status_wave_v.set("Constant")
-        duration_thread = Thread(target=duration_timer)
+        status_refresh()
+
 
 
 
