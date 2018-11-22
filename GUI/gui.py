@@ -105,8 +105,10 @@ class GUI:
 
         #TODO 
         '''
+        -TEST WRITER THREAD
         -SET INPUT LIMITATIONS
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
+        -NEED TO DESTROY THREADS?
         '''
 
         def demagnetization():
@@ -117,11 +119,17 @@ class GUI:
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
-            self.console_output.insert(1.0, "Calibration in progress...\n")
+            #self.console_output.insert(1.0, "Calibration in progress...\n")
+            msg = "Calibration in progress..."
+            write_thread = Thread(target=writer, args=msg)
+            write_thread.start()
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
-            self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
+            msg = "Calibration complete. Zero field is"
+            write_thread = Thread(target=writer, args=msg)
+            write_thread.start()
+            #self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def status_refresh():
             if mm != None:
@@ -334,7 +342,13 @@ class GUI:
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
-                #
+
+        def writer(msg):
+            self.console_output.insert(1.0, msg+"\n")
+            #open and close once during initialization and destroy
+            f=open("log.txt","w+")
+            f.write(msg+"\n")
+            f.close()
 
         def duration_timer():
             duration = float(gui_support.status_duration_v.get())
