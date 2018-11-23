@@ -203,7 +203,7 @@ class GUI:
                 self.console_output.insert(1.0, "Moving by "+str(xmove)+"x\n")
                 mm.set_mode(Mode.RELATIVE)
                 x, y, z = mm.get_current_position()
-                mm.go_to_position(float(xmove)+x,y,z)
+                mm.go_to_position(float(xmove)+x,0,0)
                 self.console_output.insert(1.0, "Moving complete\n")
                 #
 
