@@ -152,7 +152,8 @@ class GUI:
             gui_support.status_current_v.set(str(c))
             gui_support.status_magfield_v.set(str(demagnetizer.get_field()))
             self.console_output.insert(1.0, "Status page refreshed\n")
-
+        def clear_console():
+            self.console_outputdelete(1.0, END)
         def is_okay(string):
             match = re.search('[^0-9.-]', str(string))
             if match:
@@ -963,6 +964,12 @@ class GUI:
         self.console_output.configure(selectbackground="#c4c4c4")
         self.console_output.configure(width=10)
         self.console_output.configure(wrap=NONE)
+
+        self.Button_clear_console = Button(self.Status_Frame, command = lambda: clear_console())
+        self.Button_clear_console.place(relx=0.754, rely=0.629, relheight=26
+                                  , relwidth=74)
+        self.Button_status_refresh.configure(activebackground="#d9d9d9")
+        self.Button_status_refresh.configure(text='''Clear Console''')
 
         self.Frame_demag = Frame(top)
         self.Frame_demag.place(relx=0.541, rely=0.743, relheight=0.251
