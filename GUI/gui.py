@@ -52,6 +52,7 @@ def create_GUI(root, *args, **kwargs):
     return (w, top)
 
 def destroy_GUI():
+    f.close()
     global w
     w.destroy()
     w = None
@@ -103,12 +104,13 @@ class GUI:
         demagnetizer = Demagnetizer(supply, relay_1, relay_2)
         
 
-        #TODO 
+        #TODO
         '''
-        -TEST WRITER THREAD
-        -SET INPUT LIMITATIONS
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        -NEED TO DESTROY THREADS?
+        -TEST WRITER THREAD
+        -FIX STEP FUNCTIONS
+        -MAKE PATHING FUNCTION
+        -SET INPUT LIMITATIONS
         '''
 
         def demagnetization():
@@ -119,17 +121,17 @@ class GUI:
             self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
-            #self.console_output.insert(1.0, "Calibration in progress...\n")
-            msg = "Calibration in progress..."
-            write_thread = Thread(target=writer, args=msg)
-            write_thread.start()
+            self.console_output.insert(1.0, "Calibration in progress...\n")
+            #msg = "Calibration in progress..."
+            #write_thread = Thread(target=writer, args=msg)
+            #write_thread.start()
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
             msg = "Calibration complete. Zero field is"
-            write_thread = Thread(target=writer, args=msg)
-            write_thread.start()
-            #self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
+            #write_thread = Thread(target=writer, args=msg)
+            #write_thread.start()
+            self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def status_refresh():
             if mm != None:
@@ -323,7 +325,7 @@ class GUI:
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s...\n")
-                #
+
 
         def ramping_run():
             amplitude = gui_support.ramping_amp.get()
@@ -346,9 +348,9 @@ class GUI:
         def writer(msg):
             self.console_output.insert(1.0, msg+"\n")
             #open and close once during initialization and destroy
-            f=open("log.txt","w+")
+            global f
             f.write(msg+"\n")
-            f.close()
+
 
         def duration_timer():
             duration = float(gui_support.status_duration_v.get())
@@ -1038,6 +1040,7 @@ class GUI:
         gui_support.status_res_v.set("Low")
         gui_support.status_vel_v.set("500")
         gui_support.status_wave_v.set("Constant")
+        f = open("log.txt", "a")
         status_refresh()
 
 
