@@ -1099,6 +1099,9 @@ class GUI:
         if mm == None:
             for child in self.MM_Frame.winfo_children():
                 child.configure(state = 'disable')
+        if supply == None:
+            for child in self.Current_Frame.winfo_children():
+                child.configure(state = 'disable')
 
         self.Entry_gtp_x.insert(0, "x")
         self.Entry_gtp_y.insert(0, "y")
