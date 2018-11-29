@@ -52,7 +52,6 @@ def create_GUI(root, *args, **kwargs):
     return (w, top)
 
 def destroy_GUI():
-    f.close()
     global w
     w.destroy()
     w = None
@@ -107,43 +106,38 @@ class GUI:
         #TODO
         '''
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
-        -TEST WRITER THREAD
-        -FIX STEP FUNCTIONS
+        -STOP/INTERRUPT BUTTONS
         -MAKE PATHING FUNCTION
-        -SET INPUT LIMITATIONS
         '''
 
         def demagnetization():
-            self.console_output.insert(1.0, "Demagnetization in progress...\n")
-            time.sleep(3)
-            demagnetizer.demag_current(zero_field)
-            r_field = demagnetizer.get_field()
-            self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
+            try:
+                zero_field
+            except NameError:
+                self.console_output.insert(1.0, "Calibration required\n")
+            else:
+                self.console_output.insert(1.0, "Demagnetization in progress...\n")
+                time.sleep(3)
+                demagnetizer.demag_current(zero_field)
+                r_field = demagnetizer.get_field()
+                self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
             self.console_output.insert(1.0, "Calibration in progress...\n")
-            #msg = "Calibration in progress..."
-            #write_thread = Thread(target=writer, args=msg)
-            #write_thread.start()
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
-            msg = "Calibration complete. Zero field is"
-            #write_thread = Thread(target=writer, args=msg)
-            #write_thread.start()
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def status_refresh():
             if mm != None:
                 mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
-                gui_support.status_abspos_v.set(str(x) + "x, " + str(y) + "y, " + str(z) + "z")
-                mm.set_mode(Mode.RELATIVE)
-                x,y,z = mm.get_current_position()
-                gui_support.status_relpos_v.set(str(x)+"x, "+str(y)+"y, "+str(z)+"z")
+                gui_support.status_abspos_v.set(str(x) + " x,  " + str(y) + " y,  " + str(z) + " z")
                 mm_status_dict = mm.get_status()
                 vel = mm_status_dict['XSPEED']
                 gui_support.velocity.set(str(vel))
+                gui_support.status_vel_v.set(str(vel))
                 res = mm_status_dict['XSPEED_RES']
                 gui_support.status_res_v.set(str(res))
                 mm.refresh_display()
@@ -152,8 +146,7 @@ class GUI:
             gui_support.status_current_v.set(str(c))
             gui_support.status_magfield_v.set(str(demagnetizer.get_field()))
             self.console_output.insert(1.0, "Status page refreshed\n")
-        def clear_console():
-            self.console_outputdelete(1.0, END)
+
         def is_okay(string):
             match = re.search('[^0-9.-]', str(string))
             if match:
@@ -180,19 +173,11 @@ class GUI:
             if (is_okay(x) or is_okay(y) or is_okay(z)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
-                if gui_support.radio_pos_mode.get() == "relative":
-                    mm.set_mode(Mode.RELATIVE)
-                else:
-                    mm.set_mode(Mode.ABSOLUTE)
-
-                self.Button_gtp.configure(state="disabled")
                 self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
+                mm.set_mode(Mode.ABSOLUTE)
                 mm.go_to_position(float(x),float(y),float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
-                x, y, z = mm.get_current_position()
-                gui_support.status_relpos_v.set(x+ "x, " + y + "y, " + z + "z")
-                self.Button_gtp.configure(state="normal")
-
+                status_refresh()
 
         def origin():
             mm.set_origin()
@@ -204,23 +189,23 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
                 self.console_output.insert(1.0, "Moving by "+str(xmove)+"x\n")
-                mm.set_mode(Mode.RELATIVE)
+                mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
-                mm.go_to_position(float(xmove)+x,0,0)
+                mm.go_to_position(float(xmove)+x,y,z)
                 self.console_output.insert(1.0, "Moving complete\n")
-                #
+                status_refresh()
 
         def step_y():
             ymove = gui_support.step_y.get()
             if is_okay(ymove):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
-                self.console_output.insert(1.0, "Moving by "+ymove+"y\n")
-                mm.set_mode(Mode.RELATIVE)
+                self.console_output.insert(1.0, "Moving by "+str(ymove)+"y\n")
+                mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(x, float(ymove) + y, z)
                 self.console_output.insert(1.0, "Move complete\n")
-                #
+                status_refresh()
 
         def step_z():
             zmove = gui_support.step_z.get()
@@ -228,17 +213,17 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             else:
                 self.console_output.insert(1.0, "Moving by "+str(zmove)+"z\n")
-                mm.set_mode(Mode.RELATIVE)
+                mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(x, y, float(zmove)+z)
                 self.console_output.insert(1.0, "Move complete\n")
-                #
+                status_refresh()
 
         def change_velocity():
             vel = gui_support.velocity.get()
             if is_okay(vel):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
-            elif float(vel) <= 0 or float(vel) > 1000:
+            elif float(vel) <= 0:
                 self.console_output.insert(1.0, "Velocity must be positive and less than 1000...\n")
             else:
                 if gui_support.radio_resolution.get() == "low":
@@ -247,6 +232,18 @@ class GUI:
                     mm.set_velocity(float(vel), Resolution.HIGH)
                     
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
+                status_refresh()
+
+        def change_resolution():
+            res = gui_support.radio_resolution.get()
+            mm_status_dict = mm.get_status()
+            vel = mm_status_dict['XSPEED']
+            if gui_support.radio_resolution.get() == "low":
+                mm.set_velocity(float(vel), Resolution.LOW)
+            else:
+                mm.set_velocity(float(vel), Resolution.HIGH)
+
+            status_refresh()
 
         def master_stop():
             supply_interupt()
@@ -282,6 +279,8 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            elif float(current) > 3:
+                self.console_output.insert(1.0, "Current must be less than 3...\n")
             else:
                 supply.set_current(float(current))
                 supply.enable_output()
@@ -301,6 +300,8 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            elif float(current) > 3:
+                self.console_output.insert(1.0, "Current must be less than or equal to 3...\n")
             else:
                 supply.start_square_wave(float(current),1/float(freq),float(duty)/100)
                 gui_support.status_wave_v.set("Square")
@@ -319,6 +320,8 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            elif float(amplitude)+float(offset) > 3:
+                self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3...\n")
             else:
                 supply.start_sine_wave(float(amplitude), 1/float(freq), None, float(offset))
                 gui_support.status_wave_v.set("Sinusoidal")
@@ -338,6 +341,8 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+            elif float(amplitude)+float(offset) > 3:
+                self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3...\n")
             else:
                 supply.start_ramp_wave(float(amplitude), float(rise), float(steady), float(rest))
                 gui_support.status_wave_v.set("Ramping")
@@ -345,13 +350,6 @@ class GUI:
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
-
-        def writer(msg):
-            self.console_output.insert(1.0, msg+"\n")
-            #open and close once during initialization and destroy
-            global f
-            f.write(msg+"\n")
-
 
         def duration_timer():
             duration = float(gui_support.status_duration_v.get())
@@ -366,6 +364,16 @@ class GUI:
 
             supply.stop_wave()
             supply.disable_output()
+
+        def clear_console():
+            self.console_output.delete(1.0, END)
+
+        def write_log():
+            current_directory = os.getcwd() + "/log.txt"
+            msg = self.console_output.get(1.0, END)
+            f = open(current_directory, 'a+')
+            f.write("==========================NEW LOG==========================\n" + msg)
+            f.close()
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
@@ -406,7 +414,7 @@ class GUI:
         self.Entry_gtp_z.configure(textvariable=gui_support.gtp_z)
 
         self.Button_gtp = Button(self.MM_Frame, command=lambda:gtp())
-        self.Button_gtp.place(relx=0.049, rely=0.203, height=26, width=149)
+        self.Button_gtp.place(relx=0.049, rely=0.211, height=26, width=149)
         self.Button_gtp.configure(activebackground="#d9d9d9")
         self.Button_gtp.configure(text='''Go To Position (um)''')
 
@@ -430,10 +438,10 @@ class GUI:
         self.Button_step_z.configure(activebackground="#d9d9d9")
         self.Button_step_z.configure(text='''z''')
 
-        self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
-        self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
-        self.Button_setorigin.configure(activebackground="#d9d9d9")
-        self.Button_setorigin.configure(text='''Set Origin''')
+        #self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
+        #self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
+        #self.Button_setorigin.configure(activebackground="#d9d9d9")
+        #self.Button_setorigin.configure(text='''Set Origin''')
 
         self.Button_velocity = Button(self.MM_Frame, command = lambda: change_velocity())
         self.Button_velocity.place(relx=0.444, rely=0.475, height=26, width=118)
@@ -482,21 +490,19 @@ class GUI:
         self.Spinbox_step_y.configure(to="50.0")
 
         self.Radiobutton_highres = Radiobutton(self.MM_Frame, command = lambda: change_resolution())
-        self.Radiobutton_highres.place(relx=0.42, rely=0.576, relheight=0.068
-                                       , relwidth=0.469)
+        self.Radiobutton_highres.place(relx=0.42, rely=0.576, relheight=0.068, relwidth=0.469)
         self.Radiobutton_highres.configure(activebackground="#d9d9d9")
         self.Radiobutton_highres.configure(justify=LEFT)
         self.Radiobutton_highres.configure(text='''High Resolution (0.4um/s)''')
-        self.Radiobutton_highres.configure(value="high")
+        self.Radiobutton_highres.configure(value="low")
         self.Radiobutton_highres.configure(variable=gui_support.radio_resolution)
 
         self.Radiobutton_lowres = Radiobutton(self.MM_Frame, command = lambda: change_resolution())
-        self.Radiobutton_lowres.place(relx=0.43, rely=0.644, relheight=0.068
-                                      , relwidth=0.415)
+        self.Radiobutton_lowres.place(relx=0.43, rely=0.644, relheight=0.068, relwidth=0.415)
         self.Radiobutton_lowres.configure(activebackground="#d9d9d9")
         self.Radiobutton_lowres.configure(justify=LEFT)
         self.Radiobutton_lowres.configure(text='''Low Resolution (2um/s)''')
-        self.Radiobutton_lowres.configure(value="low")
+        self.Radiobutton_lowres.configure(value="high")
         self.Radiobutton_lowres.configure(variable=gui_support.radio_resolution)
 
         self.Button_mm_interrupt = Button(self.MM_Frame, command = lambda: mm_interupt())
@@ -522,23 +528,21 @@ class GUI:
         self.Entry_pathing_func.configure(selectbackground="#c4c4c4")
         self.Entry_pathing_func.configure(textvariable=gui_support.pathing_func)
 
-        self.Radiobutton_absolute = Radiobutton(self.MM_Frame)
-        self.Radiobutton_absolute.place(relx=0.444, rely=0.136, relheight=0.068
-                                        , relwidth=0.205)
-        self.Radiobutton_absolute.configure(activebackground="#d9d9d9")
-        self.Radiobutton_absolute.configure(justify='left')
-        self.Radiobutton_absolute.configure(text='''Absolute''')
-        self.Radiobutton_absolute.configure(value="absolute")
-        self.Radiobutton_absolute.configure(variable=gui_support.radio_pos_mode)
+        #self.Radiobutton_absolute = Radiobutton(self.MM_Frame)
+        #self.Radiobutton_absolute.place(relx=0.444, rely=0.136, relheight=0.068, relwidth=0.205)
+        #self.Radiobutton_absolute.configure(activebackground="#d9d9d9")
+        #self.Radiobutton_absolute.configure(justify='left')
+        #self.Radiobutton_absolute.configure(text='''Absolute''')
+        #self.Radiobutton_absolute.configure(value="absolute")
+        #self.Radiobutton_absolute.configure(variable=gui_support.radio_pos_mode)
 
-        self.Radiobutton_relative = Radiobutton(self.MM_Frame)
-        self.Radiobutton_relative.place(relx=0.444, rely=0.203, relheight=0.068
-                                        , relwidth=0.19)
-        self.Radiobutton_relative.configure(activebackground="#d9d9d9")
-        self.Radiobutton_relative.configure(justify='left')
-        self.Radiobutton_relative.configure(text='''Relative''')
-        self.Radiobutton_relative.configure(value="relative")
-        self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
+        #self.Radiobutton_relative = Radiobutton(self.MM_Frame)
+        #self.Radiobutton_relative.place(relx=0.444, rely=0.203, relheight=0.068, relwidth=0.19)
+        #self.Radiobutton_relative.configure(activebackground="#d9d9d9")
+        #self.Radiobutton_relative.configure(justify='left')
+        #self.Radiobutton_relative.configure(text='''Relative''')
+        #self.Radiobutton_relative.configure(value="relative")
+        #self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
 
         self.Current_Frame = Frame(top)
         self.Current_Frame.place(relx=0.0, rely=0.477, relheight=0.517
@@ -827,11 +831,10 @@ class GUI:
         self.Label_status.configure(font=font9)
         self.Label_status.configure(text='''Status''')
 
-        self.Label_status_relpos = Label(self.Status_Frame, anchor='w')
-        self.Label_status_relpos.place(relx=0.058, rely=0.076, height=18
-                                       , width=144)
-        self.Label_status_relpos.configure(activebackground="#f9f9f9")
-        self.Label_status_relpos.configure(text='''Relative Position (um):''')
+        #self.Label_status_relpos = Label(self.Status_Frame, anchor='w')
+        #self.Label_status_relpos.place(relx=0.058, rely=0.076, height=18, width=144)
+        #self.Label_status_relpos.configure(activebackground="#f9f9f9")
+        #self.Label_status_relpos.configure(text='''Relative Position (um):''')
 
         self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
@@ -840,7 +843,7 @@ class GUI:
 
         self.Label_status_abspos_v = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos_v.place(relx=0.4, rely=0.114, height=18
-                                         , width=125)
+                                         , width=175)
         self.Label_status_abspos_v.configure(text='''Value''')
         self.Label_status_abspos_v.configure(textvariable=gui_support.status_abspos_v)
 
@@ -866,14 +869,13 @@ class GUI:
         self.Label_console.configure(activebackground="#f9f9f9")
         self.Label_console.configure(text='''Console Output''')
 
-        self.Label_status_relpos_v = Label(self.Status_Frame, anchor='w')
-        self.Label_status_relpos_v.place(relx=0.493, rely=0.076, height=18
-                                         , width=160)
-        self.Label_status_relpos_v.configure(activebackground="#f9f9f9")
-        self.Label_status_relpos_v.configure(justify=LEFT)
-        self.Label_status_relpos_v.configure(text='''Value''')
-        self.Label_status_relpos_v.configure(textvariable=gui_support.status_relpos_v)
-        self.Label_status_relpos_v.configure(width=89)
+        #self.Label_status_relpos_v = Label(self.Status_Frame, anchor='w')
+        #self.Label_status_relpos_v.place(relx=0.493, rely=0.076, height=18, width=160)
+        #self.Label_status_relpos_v.configure(activebackground="#f9f9f9")
+        #self.Label_status_relpos_v.configure(justify=LEFT)
+        #self.Label_status_relpos_v.configure(text='''Value''')
+        #self.Label_status_relpos_v.configure(textvariable=gui_support.status_relpos_v)
+        #self.Label_status_relpos_v.configure(width=89)
 
         self.Label_status_vel_v = Label(self.Status_Frame, anchor='w')
         self.Label_status_vel_v.place(relx=0.377, rely=0.152, height=18
@@ -955,6 +957,16 @@ class GUI:
         self.Button_master_stop.configure(text='''STOP ALL''')
         self.Button_master_stop.configure(width=122)
 
+        self.Button_clear_console = Button(self.Status_Frame, command = lambda: clear_console())
+        self.Button_clear_console.place(relx=0.7, rely=0.562, height=26, width=95)
+        self.Button_clear_console.configure(activebackground="#d9d9d9")
+        self.Button_clear_console.configure(text='''Clear Console''')
+
+        self.Button_print_console = Button(self.Status_Frame, command = lambda: write_log())
+        self.Button_print_console.place(relx=0.475, rely=0.562, height=26, width=70)
+        self.Button_print_console.configure(activebackground="#d9d9d9")
+        self.Button_print_console.configure(text='''Write Log''')
+
         self.console_output = ScrolledText(self.Status_Frame)
         self.console_output.place(relx=0.029, rely=0.629, relheight=0.263
                                   , relwidth=0.951)
@@ -964,12 +976,6 @@ class GUI:
         self.console_output.configure(selectbackground="#c4c4c4")
         self.console_output.configure(width=10)
         self.console_output.configure(wrap=NONE)
-
-        self.Button_clear_console = Button(self.Status_Frame, command = lambda: clear_console())
-        self.Button_clear_console.place(relx=0.754, rely=0.629, relheight=26
-                                  , relwidth=74)
-        self.Button_status_refresh.configure(activebackground="#d9d9d9")
-        self.Button_status_refresh.configure(text='''Clear Console''')
 
         self.Frame_demag = Frame(top)
         self.Frame_demag.place(relx=0.541, rely=0.743, relheight=0.251
@@ -1047,7 +1053,6 @@ class GUI:
         gui_support.status_res_v.set("Low")
         gui_support.status_vel_v.set("500")
         gui_support.status_wave_v.set("Constant")
-        f = open("log.txt", "a")
         status_refresh()
 
 
