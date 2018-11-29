@@ -10,7 +10,7 @@ current_directory = os.getcwd()
 parent_directory = os.path.dirname(current_directory)
 sys.path.insert(0, parent_directory)
 
-#from api.demagnetizer import Demagnetizer
+from api.demagnetizer import Demagnetizer
 
 try:
     from Tkinter import *
