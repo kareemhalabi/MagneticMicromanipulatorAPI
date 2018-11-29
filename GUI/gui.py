@@ -116,14 +116,14 @@ class GUI:
             except NameError:
                 self.console_output.insert(1.0, "Calibration required\n")
             else:
-                self.console_output.insert(1.0, "Demagnetization in progress...\n")
+                self.console_output.insert(1.0, "Demagnetization in progress\n")
                 time.sleep(3)
                 demagnetizer.demag_current(zero_field)
                 r_field = demagnetizer.get_field()
                 self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
-            self.console_output.insert(1.0, "Calibration in progress...\n")
+            self.console_output.insert(1.0, "Calibration in progress\n")
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
@@ -171,9 +171,9 @@ class GUI:
             z = gui_support.gtp_z.get()
 
             if (is_okay(x) or is_okay(y) or is_okay(z)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
-                self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z...\n")
+                self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z\n")
                 mm.set_mode(Mode.ABSOLUTE)
                 mm.go_to_position(float(x),float(y),float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
@@ -186,7 +186,7 @@ class GUI:
         def step_x():
             xmove = gui_support.step_x.get()
             if (is_okay(xmove)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
                 self.console_output.insert(1.0, "Moving by "+str(xmove)+"x\n")
                 mm.set_mode(Mode.ABSOLUTE)
@@ -198,7 +198,7 @@ class GUI:
         def step_y():
             ymove = gui_support.step_y.get()
             if is_okay(ymove):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
                 self.console_output.insert(1.0, "Moving by "+str(ymove)+"y\n")
                 mm.set_mode(Mode.ABSOLUTE)
@@ -210,7 +210,7 @@ class GUI:
         def step_z():
             zmove = gui_support.step_z.get()
             if (is_okay(zmove)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
                 self.console_output.insert(1.0, "Moving by "+str(zmove)+"z\n")
                 mm.set_mode(Mode.ABSOLUTE)
@@ -222,9 +222,9 @@ class GUI:
         def change_velocity():
             vel = gui_support.velocity.get()
             if is_okay(vel):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(vel) <= 0:
-                self.console_output.insert(1.0, "Velocity must be positive and less than 1000...\n")
+                self.console_output.insert(1.0, "Velocity must be positive and less than 1000\n")
             else:
                 if gui_support.radio_resolution.get() == "low":
                     mm.set_velocity(float(vel), Resolution.LOW)
@@ -276,11 +276,11 @@ class GUI:
             duration = gui_support.constant_duration.get()
             current = gui_support.constant_amps.get()
             if (is_okay(duration) or is_okay(current)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(duration) <= 0:
-                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+                self.console_output.insert(1.0, "Duration must be greater than 0\n")
             elif float(current) > 3:
-                self.console_output.insert(1.0, "Current must be less than 3...\n")
+                self.console_output.insert(1.0, "Current must be less than 3\n")
             else:
                 supply.set_current(float(current))
                 supply.enable_output()
@@ -288,7 +288,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s...\n")
+                self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s\n")
                 ##
 
         def square_run():
@@ -297,18 +297,18 @@ class GUI:
             duty = gui_support.square_duty.get()
             duration = gui_support.square_duration.get()
             if (is_okay(duration) or is_okay(current) or is_okay(freq) or is_okay(duty)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(duration) <= 0:
-                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+                self.console_output.insert(1.0, "Duration must be greater than 0\n")
             elif float(current) > 3:
-                self.console_output.insert(1.0, "Current must be less than or equal to 3...\n")
+                self.console_output.insert(1.0, "Current must be less than or equal to 3\n")
             else:
                 supply.start_square_wave(float(current),1/float(freq),float(duty)/100)
                 gui_support.status_wave_v.set("Square")
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s...\n")
+                self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s\n")
                 #
 
         def sinusoidal_run():
@@ -317,19 +317,18 @@ class GUI:
             freq = gui_support.sin_freq.get()
             duration = gui_support.sin_duration.get()
             if (is_okay(duration) or is_okay(amplitude) or is_okay(freq) or is_okay(offset)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(duration) <= 0:
-                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
+                self.console_output.insert(1.0, "Duration must be greater than 0\n")
             elif float(amplitude)+float(offset) > 3:
-                self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3...\n")
+                self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3\n")
             else:
                 supply.start_sine_wave(float(amplitude), 1/float(freq), None, float(offset))
                 gui_support.status_wave_v.set("Sinusoidal")
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s...\n")
-
+                self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s\n")
 
         def ramping_run():
             amplitude = gui_support.ramping_amp.get()
@@ -338,18 +337,18 @@ class GUI:
             rest = gui_support.ramping_rest.get()
             duration = gui_support.ramping_duration.get()
             if (is_okay(duration) or is_okay(amplitude) or is_okay(rise) or is_okay(steady) or is_okay(rest)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format...\n")
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(duration) <= 0:
-                self.console_output.insert(1.0, "Duration must be greater than 0...\n")
-            elif float(amplitude)+float(offset) > 3:
-                self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3...\n")
+                self.console_output.insert(1.0, "Duration must be greater than 0\n")
+            elif float(amplitude) > 3:
+                self.console_output.insert(1.0, "Current must be less than or equal to 3\n")
             else:
                 supply.start_ramp_wave(float(amplitude), float(rise), float(steady), float(rest))
                 gui_support.status_wave_v.set("Ramping")
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s...\n")
+                self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s\n")
 
         def duration_timer():
             duration = float(gui_support.status_duration_v.get())
@@ -839,7 +838,7 @@ class GUI:
         self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
                                        , width=100)
-        self.Label_status_abspos.configure(text='''Absolute Position (um):''')
+        self.Label_status_abspos.configure(text='''Position (um):''')
 
         self.Label_status_abspos_v = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos_v.place(relx=0.4, rely=0.114, height=18
