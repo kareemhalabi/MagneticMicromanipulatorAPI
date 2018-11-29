@@ -10,7 +10,7 @@ current_directory = os.getcwd()
 parent_directory = os.path.dirname(current_directory)
 sys.path.insert(0, parent_directory)
 
-from api.demagnetizer import Demagnetizer
+#from api.demagnetizer import Demagnetizer
 
 try:
     from Tkinter import *
@@ -88,20 +88,6 @@ class GUI:
         self.menubar = Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
         top.configure(menu = self.menubar)
 
-        #INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
-        ports = list(serial.tools.list_ports.comports())
-
-        relay_1 = Relay(5)
-        relay_2 = Relay(6)
-
-        mm = None
-        supply = PowerSupply("/dev/ttyUSB0", relay_1, relay_2)
-        for p in ports:
-            if "/dev/ttyUSB1" in p:
-                mm = Manipulator("/dev/ttyUSB1")
-
-        demagnetizer = Demagnetizer(supply, relay_1, relay_2)
-        
 
         #TODO
         '''
@@ -109,8 +95,29 @@ class GUI:
         -STOP/INTERRUPT BUTTONS
         -MAKE PATHING FUNCTION
         '''
+        # INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
+        ports = list(serial.tools.list_ports.comports())
+
+        relay_1 = Relay(5)
+        relay_2 = Relay(6)
+
+        mm = None
+        supply = None
+        demagnetizer = None
+        for p in ports:
+            if "/dev/ttyUSB0" in p:
+                supply = PowerSupply("/dev/ttyUSB0", relay_1, relay_2)
+                demagnetizer = Demagnetizer(supply, relay_1, relay_2)
+            if "/dev/ttyUSB1" in p:
+                mm = Manipulator("/dev/ttyUSB1")
+
+        # BEGINNING OF FUNCTIONALITY
 
         def demagnetization():
+            """
+            Begins the demagnetization process. Must call calibrate_demag() the first time the GUI is opened.
+            A 3 second delay is added to this function to allow the user to get into position.
+            """
             try:
                 zero_field
             except NameError:
@@ -123,6 +130,11 @@ class GUI:
                 self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
 
         def calibrate_demag():
+            """
+            Calibration of the Hall sensor. This function should be called before every demagnetization for optimal results.
+            A 3 second delay is added to this function to allow the user to get into position.
+            """
+
             self.console_output.insert(1.0, "Calibration in progress\n")
             time.sleep(3)
             global zero_field
@@ -130,6 +142,10 @@ class GUI:
             self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
 
         def status_refresh():
+            """
+            Is called by many other functions but can be manually called as well via the Refresh button.
+            Polls the manipulator and the power supply for updates on various parameters.
+            """
             if mm != None:
                 mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
@@ -148,6 +164,11 @@ class GUI:
             self.console_output.insert(1.0, "Status page refreshed\n")
 
         def is_okay(string):
+            """
+            Checks to make sure the input string is valid. The string should contain only numbers and not contain any special characters besides only 1 of '-' and '.' each.
+            No alphabetical characters.
+            :param string: String to check for validity
+            """
             match = re.search('[^0-9.-]', str(string))
             if match:
                 return True
@@ -166,6 +187,9 @@ class GUI:
                     return False
 
         def gtp():
+            """
+            Calls the manipulator api function go_to_position with parameters set to the entry fields.
+            """
             x = gui_support.gtp_x.get()
             y = gui_support.gtp_y.get()
             z = gui_support.gtp_z.get()
@@ -180,10 +204,17 @@ class GUI:
                 status_refresh()
 
         def origin():
+            """
+            Calls the manipulator api function set_origin. Set the relative origin of the manipualtor.
+            Function no longer in use.
+            """
             mm.set_origin()
             self.console_output.insert(1.0, "Origin set\n")
 
         def step_x():
+            """
+            Calls the manipulator api function get_position to get parameters for the manipulator api function go_to_position.
+            """
             xmove = gui_support.step_x.get()
             if (is_okay(xmove)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
@@ -196,6 +227,9 @@ class GUI:
                 status_refresh()
 
         def step_y():
+            """
+            Calls the manipulator api function get_position to get parameters for the manipulator api function go_to_position.
+            """
             ymove = gui_support.step_y.get()
             if is_okay(ymove):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
@@ -208,6 +242,10 @@ class GUI:
                 status_refresh()
 
         def step_z():
+            """
+            Calls the manipulator api function get_position to get parameters for the manipulator api function go_to_position.
+            :return:
+            """
             zmove = gui_support.step_z.get()
             if (is_okay(zmove)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
@@ -220,6 +258,9 @@ class GUI:
                 status_refresh()
 
         def change_velocity():
+            """
+            Calls the manipulator api function change_velocity which changes velocity and resolution of user input.
+            """
             vel = gui_support.velocity.get()
             if is_okay(vel):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
@@ -235,7 +276,11 @@ class GUI:
                 status_refresh()
 
         def change_resolution():
-            res = gui_support.radio_resolution.get()
+            """
+            Calls the manipulator api function change_velocity which changes velocity and resolution of user input
+            but the velocity is kept the same as what is programmed to the device.
+
+            """
             mm_status_dict = mm.get_status()
             vel = mm_status_dict['XSPEED']
             if gui_support.radio_resolution.get() == "low":
@@ -246,25 +291,38 @@ class GUI:
             status_refresh()
 
         def master_stop():
+            """
+            Calls both the manipulator and supply interrupts and set duration to 0 which kills the timer thread.
+            This function should also stop the demagnetization process. Implementation would require separate thread for demagnetization.
+            """
             supply_interupt()
             mm_interupt()
             gui_support.status_duration_v.set("0")
             self.console_output.insert(1.0, "All processes stopped\n")
 
         def mm_interupt():
+            """
+            Calls the manipulator api function interrupt()
+            """
             mm.interrupt()
             self.console_output.insert(1.0, "Micromanipulator interrupted\n")
 
         def supply_interupt():
+            """
+            Calls the power_supply api functions disable_output and stop_wave. Kills timer thread.
+            """
             supply.disable_output()
             supply.stop_wave()
             gui_support.status_duration_v.set("0")
             self.console_output.insert(1.0, "Power supply interrupted\n")
 
         def stop():
+            """
+            Calls the power_supply api functions disable_output and stop_wave. Kills timer thread.
+            """
             supply.disable_output()
             gui_support.status_duration_v.set("0")
-            #need to stop square/sin/ramp individually?
+            supply.stop_wave()
             self.console_output.insert(1.0, "Power supply output disabled\n")
 
         def pathing():
@@ -273,6 +331,9 @@ class GUI:
             '''last'''
 
         def constant_run():
+            """
+            Program the power supply to a constant current and starts a timer thread for the duration.
+            """
             duration = gui_support.constant_duration.get()
             current = gui_support.constant_amps.get()
             if (is_okay(duration) or is_okay(current)):
@@ -289,9 +350,11 @@ class GUI:
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s\n")
-                ##
 
         def square_run():
+            """
+            Program the power supply to a square wave and starts a timer thread for the duration.
+            """
             current = gui_support.square_amp.get()
             freq = gui_support.square_freq.get()
             duty = gui_support.square_duty.get()
@@ -309,9 +372,11 @@ class GUI:
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
                 self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s\n")
-                #
 
         def sinusoidal_run():
+            """
+            Program the power supply to a sin wave and starts a timer thread for the duration.
+            """
             amplitude = gui_support.sin_amplitude.get()
             offset = gui_support.sin_offset.get()
             freq = gui_support.sin_freq.get()
@@ -331,6 +396,9 @@ class GUI:
                 self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s\n")
 
         def ramping_run():
+            """
+            Program the power supply to a ramping wave and starts a timer thread for the duration.
+            """
             amplitude = gui_support.ramping_amp.get()
             rise = gui_support.ramping_rise.get()
             steady = gui_support.ramping_steady.get()
@@ -351,6 +419,9 @@ class GUI:
                 self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s\n")
 
         def duration_timer():
+            """
+            Duration thread used to time power supply functionality.
+            """
             duration = float(gui_support.status_duration_v.get())
             while duration > 0:
                 if(float(gui_support.status_duration_v.get()) <= 0):
@@ -365,14 +436,23 @@ class GUI:
             supply.disable_output()
 
         def clear_console():
+            """
+            Clears Console Output.
+            """
             self.console_output.delete(1.0, END)
 
         def write_log():
+            """
+            Writes the contents of the Console Output to a file.
+            """
             current_directory = os.getcwd() + "/log.txt"
             msg = self.console_output.get(1.0, END)
             f = open(current_directory, 'a+')
             f.write("==========================NEW LOG==========================\n" + msg)
             f.close()
+
+
+        # GUI WIDGETS/ELEMENTS FOLLOW
 
         self.MM_Frame = Frame(top)
         self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
