@@ -101,6 +101,7 @@ class GUI:
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         -STOP/INTERRUPT BUTTONS
         -MAKE PATHING FUNCTION
+        -Be able to save and load 2 position
         '''
         # INSTANCE INITIALIZATION FOR MANIPULATOR, POWER SUPPLY, AND DEMAG
         ports = list(serial.tools.list_ports.comports())
@@ -575,33 +576,27 @@ class GUI:
                                   , relwidth=0.134)
         self.Spinbox_step_x.configure(activebackground="#f9f9f9")
         self.Spinbox_step_x.configure(background="white")
-        self.Spinbox_step_x.configure(from_="-50.0")
         self.Spinbox_step_x.configure(highlightbackground="black")
         self.Spinbox_step_x.configure(selectbackground="#c4c4c4")
         self.Spinbox_step_x.configure(textvariable=gui_support.step_x)
-        self.Spinbox_step_x.configure(to="50.0")
 
         self.Spinbox_step_z = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
         self.Spinbox_step_z.place(relx=0.049, rely=0.712, relheight=0.068
                                   , relwidth=0.134)
         self.Spinbox_step_z.configure(activebackground="#f9f9f9")
         self.Spinbox_step_z.configure(background="white")
-        self.Spinbox_step_z.configure(from_="-50.0")
         self.Spinbox_step_z.configure(highlightbackground="black")
         self.Spinbox_step_z.configure(selectbackground="#c4c4c4")
         self.Spinbox_step_z.configure(textvariable=gui_support.step_z)
-        self.Spinbox_step_z.configure(to="50.0")
 
         self.Spinbox_step_y = Spinbox(self.MM_Frame, from_=-50.0, to=50.0)
         self.Spinbox_step_y.place(relx=0.049, rely=0.61, relheight=0.068
                                   , relwidth=0.134)
         self.Spinbox_step_y.configure(activebackground="#f9f9f9")
         self.Spinbox_step_y.configure(background="white")
-        self.Spinbox_step_y.configure(from_="-50.0")
         self.Spinbox_step_y.configure(highlightbackground="black")
         self.Spinbox_step_y.configure(selectbackground="#c4c4c4")
         self.Spinbox_step_y.configure(textvariable=gui_support.step_y)
-        self.Spinbox_step_y.configure(to="50.0")
 
         self.Radiobutton_highres = Radiobutton(self.MM_Frame, command=lambda: change_resolution())
         self.Radiobutton_highres.place(relx=0.42, rely=0.576, relheight=0.068, relwidth=0.469)
@@ -657,6 +652,8 @@ class GUI:
         # self.Radiobutton_relative.configure(text='''Relative''')
         # self.Radiobutton_relative.configure(value="relative")
         # self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
+
+        
 
         self.Current_Frame = Frame(top)
         self.Current_Frame.place(relx=0.0, rely=0.477, relheight=0.517
@@ -724,7 +721,7 @@ class GUI:
         self.Label_constant_duration.place(relx=0.027, rely=0.214, height=18
                                            , width=79)
         self.Label_constant_duration.configure(activebackground="#f9f9f9")
-        self.Label_constant_duration.configure(text='''Duration (s)''')
+        self.Label_constant_duration.configure(text='''Run Time (s)''')
 
         self.Entry_constant_duration = Entry(self.Notebook_ps_t0)
         self.Entry_constant_duration.place(relx=0.297, rely=0.214, height=20
@@ -757,7 +754,7 @@ class GUI:
         self.Label_square_duration.place(relx=0.027, rely=0.214, height=18
                                          , width=79)
         self.Label_square_duration.configure(activebackground="#f9f9f9")
-        self.Label_square_duration.configure(text='''Duration (s)''')
+        self.Label_square_duration.configure(text='''Run Time (s)''')
 
         self.Entry_square_duration = Entry(self.Notebook_ps_t1)
         self.Entry_square_duration.place(relx=0.324, rely=0.214, height=20
@@ -848,7 +845,7 @@ class GUI:
         self.Label_sin_duration = Label(self.Notebook_ps_t2, anchor='w')
         self.Label_sin_duration.place(relx=0.027, rely=0.5, height=18, width=79)
         self.Label_sin_duration.configure(activebackground="#f9f9f9")
-        self.Label_sin_duration.configure(text='''Duration (s)''')
+        self.Label_sin_duration.configure(text='''Run Time (s)''')
 
         self.Entry_sin_duration = Entry(self.Notebook_ps_t2)
         self.Entry_sin_duration.place(relx=0.324, rely=0.5, height=20
@@ -890,7 +887,7 @@ class GUI:
 
         self.Label_ramping_duration = Label(self.Notebook_ps_t3, anchor='w')
         self.Label_ramping_duration.place(relx=0.027, rely=0.643, height=18, width=86)
-        self.Label_ramping_duration.configure(text='''Duration (s)''')
+        self.Label_ramping_duration.configure(text='''Run Time (s)''')
 
         self.Entry_ramping_amp = Entry(self.Notebook_ps_t3)
         self.Entry_ramping_amp.place(relx=0.324, rely=0.071, height=20
