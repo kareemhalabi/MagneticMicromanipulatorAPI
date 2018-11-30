@@ -5,7 +5,8 @@
 # In conjunction with Tcl version 8.6
 #    Nov 05, 2018 02:38:38 AM EST  platform: Linux
 
-import os,sys
+import os, sys
+
 current_directory = os.getcwd()
 parent_directory = os.path.dirname(current_directory)
 sys.path.insert(0, parent_directory)
@@ -19,37 +20,44 @@ except ImportError:
 
 try:
     import ttk
+
     py3 = False
 except ImportError:
     import tkinter.ttk as ttk
+
     py3 = True
 
 import gui_support
 import serial.tools.list_ports
-
+from api.wave_visualizer import *
 from api.manipulator import *
 from api.power_supply import *
 from threading import *
+
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
     global val, w, root
     root = Tk()
     gui_support.set_Tk_var()
-    top = GUI (root)
+    top = GUI(root)
     gui_support.init(root, top)
     root.mainloop()
 
+
 w = None
+
+
 def create_GUI(root, *args, **kwargs):
     '''Starting point when module is imported by another program.'''
     global w, w_win, rt
     rt = root
-    w = Toplevel (root)
+    w = Toplevel(root)
     gui_support.set_Tk_var()
-    top = GUI (w)
+    top = GUI(w)
     gui_support.init(w, top, *args, **kwargs)
     return (w, top)
+
 
 def destroy_GUI():
     global w
@@ -63,9 +71,9 @@ class GUI:
            top is the toplevel containing window.'''
         _bgcolor = '#d9d9d9'  # X11 color: 'gray85'
         _fgcolor = '#000000'  # X11 color: 'black'
-        _compcolor = '#d9d9d9' # X11 color: 'gray85'
-        _ana1color = '#d9d9d9' # X11 color: 'gray85' 
-        _ana2color = '#d9d9d9' # X11 color: 'gray85' 
+        _compcolor = '#d9d9d9'  # X11 color: 'gray85'
+        _ana1color = '#d9d9d9'  # X11 color: 'gray85'
+        _ana2color = '#d9d9d9'  # X11 color: 'gray85'
         font10 = "-family Verdana -size 14 -weight normal -slant roman" \
                  " -underline 0 -overstrike 0"
         font11 = "-family Verdana -size 14 -weight bold -slant roman " \
@@ -75,21 +83,20 @@ class GUI:
         self.style = ttk.Style()
         if sys.platform == "win32":
             self.style.theme_use('winnative')
-        self.style.configure('.',background=_bgcolor)
-        self.style.configure('.',foreground=_fgcolor)
-        self.style.configure('.',font="TkDefaultFont")
-        self.style.map('.',background=
-            [('selected', _compcolor), ('active',_ana2color)])
+        self.style.configure('.', background=_bgcolor)
+        self.style.configure('.', foreground=_fgcolor)
+        self.style.configure('.', font="TkDefaultFont")
+        self.style.map('.', background=
+        [('selected', _compcolor), ('active', _ana2color)])
 
         top.geometry("758x629+110+66")
         top.title("GUI")
         top.configure(highlightcolor="black")
 
-        self.menubar = Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
-        top.configure(menu = self.menubar)
+        self.menubar = Menu(top, font="TkMenuFont", bg=_bgcolor, fg=_fgcolor)
+        top.configure(menu=self.menubar)
 
-
-        #TODO
+        # TODO
         '''
         -MANUAL COM PORT SELECTION, VARIABLE COM PORTS, AUTO DETECT COM PORTS?
         -STOP/INTERRUPT BUTTONS
@@ -127,7 +134,7 @@ class GUI:
                 time.sleep(3)
                 demagnetizer.demag_current(zero_field)
                 r_field = demagnetizer.get_field()
-                self.console_output.insert(1.0, "Demagnetization complete. Residual field is "+str(r_field)+"\n")
+                self.console_output.insert(1.0, "Demagnetization complete. Residual field is " + str(r_field) + "\n")
 
         def calibrate_demag():
             """
@@ -139,7 +146,7 @@ class GUI:
             time.sleep(3)
             global zero_field
             zero_field = demagnetizer.calibrate()
-            self.console_output.insert(1.0, "Calibration complete. Zero field is "+str(zero_field)+"\n")
+            self.console_output.insert(1.0, "Calibration complete. Zero field is " + str(zero_field) + "\n")
 
         def status_refresh():
             """
@@ -158,7 +165,7 @@ class GUI:
                 gui_support.status_res_v.set(str(res))
                 mm.refresh_display()
 
-            c=round(supply.get_current(),4)
+            c = round(supply.get_current(), 4)
             gui_support.status_current_v.set(str(c))
             gui_support.status_magfield_v.set(str(demagnetizer.get_field()))
             self.console_output.insert(1.0, "Status page refreshed\n")
@@ -177,7 +184,7 @@ class GUI:
                     return True
                 elif string.count('-') > 1 or string.count('.') > 1:
                     return True
-                elif string.find('-') != -1 and not(string.startswith('-')):
+                elif string.find('-') != -1 and not (string.startswith('-')):
                     return True
                 elif string.startswith('.'):
                     return True
@@ -197,9 +204,9 @@ class GUI:
             if (is_okay(x) or is_okay(y) or is_okay(z)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
-                self.console_output.insert(1.0, "Moving to "+x+"x "+y+"y "+z+"z\n")
+                self.console_output.insert(1.0, "Moving to " + x + "x " + y + "y " + z + "z\n")
                 mm.set_mode(Mode.ABSOLUTE)
-                mm.go_to_position(float(x),float(y),float(z))
+                mm.go_to_position(float(x), float(y), float(z))
                 self.console_output.insert(1.0, "Moving complete\n")
                 status_refresh()
 
@@ -219,10 +226,10 @@ class GUI:
             if (is_okay(xmove)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
-                self.console_output.insert(1.0, "Moving by "+str(xmove)+"x\n")
+                self.console_output.insert(1.0, "Moving by " + str(xmove) + "x\n")
                 mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
-                mm.go_to_position(float(xmove)+x,y,z)
+                mm.go_to_position(float(xmove) + x, y, z)
                 self.console_output.insert(1.0, "Moving complete\n")
                 status_refresh()
 
@@ -234,7 +241,7 @@ class GUI:
             if is_okay(ymove):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
-                self.console_output.insert(1.0, "Moving by "+str(ymove)+"y\n")
+                self.console_output.insert(1.0, "Moving by " + str(ymove) + "y\n")
                 mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
                 mm.go_to_position(x, float(ymove) + y, z)
@@ -250,10 +257,10 @@ class GUI:
             if (is_okay(zmove)):
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             else:
-                self.console_output.insert(1.0, "Moving by "+str(zmove)+"z\n")
+                self.console_output.insert(1.0, "Moving by " + str(zmove) + "z\n")
                 mm.set_mode(Mode.ABSOLUTE)
                 x, y, z = mm.get_current_position()
-                mm.go_to_position(x, y, float(zmove)+z)
+                mm.go_to_position(x, y, float(zmove) + z)
                 self.console_output.insert(1.0, "Move complete\n")
                 status_refresh()
 
@@ -271,7 +278,7 @@ class GUI:
                     mm.set_velocity(float(vel), Resolution.LOW)
                 else:
                     mm.set_velocity(float(vel), Resolution.HIGH)
-                    
+
                 self.console_output.insert(1.0, "Changed velocity to " + str(vel) + "um/s\n")
                 status_refresh()
 
@@ -326,8 +333,8 @@ class GUI:
             self.console_output.insert(1.0, "Power supply output disabled\n")
 
         def pathing():
-            #three entries, one for each axis
-            #two more entries for upper and lower bounds of time parameter
+            # three entries, one for each axis
+            # two more entries for upper and lower bounds of time parameter
             '''last'''
 
         def constant_run():
@@ -349,7 +356,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running constant wave for "+str(duration)+"s\n")
+                self.console_output.insert(1.0, "Running constant wave for " + str(duration) + "s\n")
 
         def square_run():
             """
@@ -366,12 +373,12 @@ class GUI:
             elif float(current) > 3:
                 self.console_output.insert(1.0, "Current must be less than or equal to 3\n")
             else:
-                supply.start_square_wave(float(current),1/float(freq),float(duty)/100)
+                supply.start_square_wave(float(current), 1 / float(freq), float(duty) / 100)
                 gui_support.status_wave_v.set("Square")
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running square wave for "+str(duration)+"s\n")
+                self.console_output.insert(1.0, "Running square wave for " + str(duration) + "s\n")
 
         def sinusoidal_run():
             """
@@ -385,15 +392,15 @@ class GUI:
                 self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
             elif float(duration) <= 0:
                 self.console_output.insert(1.0, "Duration must be greater than 0\n")
-            elif float(amplitude)+float(offset) > 3:
+            elif float(amplitude) + float(offset) > 3:
                 self.console_output.insert(1.0, "Amplitude + offset must be less than or equal to 3\n")
             else:
-                supply.start_sine_wave(float(amplitude), 1/float(freq), None, float(offset))
+                supply.start_sine_wave(float(amplitude), 1 / float(freq), None, float(offset))
                 gui_support.status_wave_v.set("Sinusoidal")
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running sinusoidal wave for "+str(duration)+"s\n")
+                self.console_output.insert(1.0, "Running sinusoidal wave for " + str(duration) + "s\n")
 
         def ramping_run():
             """
@@ -416,7 +423,7 @@ class GUI:
                 gui_support.status_duration_v.set(str(duration))
                 duration_thread = Thread(target=duration_timer)
                 duration_thread.start()
-                self.console_output.insert(1.0, "Running ramping wave for "+str(duration)+"s\n")
+                self.console_output.insert(1.0, "Running ramping wave for " + str(duration) + "s\n")
 
         def duration_timer():
             """
@@ -424,13 +431,13 @@ class GUI:
             """
             duration = float(gui_support.status_duration_v.get())
             while duration > 0:
-                if(float(gui_support.status_duration_v.get()) <= 0):
+                if (float(gui_support.status_duration_v.get()) <= 0):
                     supply.disable_output()
                     supply.stop_wave()
                     break
-                self.console_output.insert(1.0, "Remaining duration: " + str(duration)+"\n")
+                self.console_output.insert(1.0, "Remaining duration: " + str(duration) + "\n")
                 time.sleep(1)
-                duration = duration-1
+                duration = duration - 1
 
             supply.stop_wave()
             supply.disable_output()
@@ -451,6 +458,34 @@ class GUI:
             f.write("==========================NEW LOG==========================\n" + msg)
             f.close()
 
+        def plot_square():
+            amplitude = gui_support.square_amp.get()
+            freq = gui_support.square_freq.get()
+            period = 1 / float(freq)
+            duty = gui_support.square_duty.get()
+            duty_cycle = float(duty) / 100
+            square_function = '%f * (step(t) - step(t-%f))' % (float(amplitude), period * duty_cycle)
+            visualize_wave(square_function, 't', (0, period), wave_title="Square Wave")
+
+        def plot_ramping():
+            amplitude = gui_support.ramping_amp.get()
+            rise_time = gui_support.ramping_rise.get()
+            steady_time = gui_support.ramping_steady.get()
+            rest_time = gui_support.ramping_rest.get()
+            ramp_function = '(%(amplitude)f / %(rise_time)f) * t * (step(t) - step(t - %(rise_time)f)) + ' \
+                            '%(amplitude)f * (step(t-%(rise_time)f) - step(t - %(rise_time)f - %(steady_time)f))' \
+                            % {'amplitude': float(amplitude), 'rise_time': float(rise_time),
+                               'steady_time': float(steady_time)}
+            visualize_wave(ramp_function, 't', (0, float(rise_time) + float(steady_time) + float(rest_time)),
+                           MIN_STEP_PERIOD, "Ramping Wave")
+
+        def plot_sin():
+            amplitude = float(gui_support.sin_amplitude.get())
+            dc_offset = float(gui_support.sin_offset.get())
+            period = 1 / float(gui_support.sin_freq.get())
+            time_offset = 0
+            sin_function = '%f * sin(2 * pi * (t - %f) / %f) + %f' % (amplitude, time_offset, period, dc_offset)
+            visualize_wave(sin_function, 't', (0, period), MIN_STEP_PERIOD, "Sine Wave")
 
         # GUI WIDGETS/ELEMENTS FOLLOW
 
@@ -492,12 +527,12 @@ class GUI:
         self.Entry_gtp_z.configure(selectbackground="#c4c4c4")
         self.Entry_gtp_z.configure(textvariable=gui_support.gtp_z)
 
-        self.Button_gtp = Button(self.MM_Frame, command=lambda:gtp())
+        self.Button_gtp = Button(self.MM_Frame, command=lambda: gtp())
         self.Button_gtp.place(relx=0.049, rely=0.211, height=26, width=149)
         self.Button_gtp.configure(activebackground="#d9d9d9")
         self.Button_gtp.configure(text='''Go To Position (um)''')
 
-        self.Button_step_x = Button(self.MM_Frame, command=lambda:step_x())
+        self.Button_step_x = Button(self.MM_Frame, command=lambda: step_x())
         self.Button_step_x.place(relx=0.198, rely=0.508, height=26, width=32)
         self.Button_step_x.configure(activebackground="#d9d9d9")
         self.Button_step_x.configure(text='''x''')
@@ -517,12 +552,12 @@ class GUI:
         self.Button_step_z.configure(activebackground="#d9d9d9")
         self.Button_step_z.configure(text='''z''')
 
-        #self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
-        #self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
-        #self.Button_setorigin.configure(activebackground="#d9d9d9")
-        #self.Button_setorigin.configure(text='''Set Origin''')
+        # self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
+        # self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
+        # self.Button_setorigin.configure(activebackground="#d9d9d9")
+        # self.Button_setorigin.configure(text='''Set Origin''')
 
-        self.Button_velocity = Button(self.MM_Frame, command = lambda: change_velocity())
+        self.Button_velocity = Button(self.MM_Frame, command=lambda: change_velocity())
         self.Button_velocity.place(relx=0.444, rely=0.475, height=26, width=118)
         self.Button_velocity.configure(activebackground="#d9d9d9")
         self.Button_velocity.configure(text='''Velocity (um/s)''')
@@ -568,7 +603,7 @@ class GUI:
         self.Spinbox_step_y.configure(textvariable=gui_support.step_y)
         self.Spinbox_step_y.configure(to="50.0")
 
-        self.Radiobutton_highres = Radiobutton(self.MM_Frame, command = lambda: change_resolution())
+        self.Radiobutton_highres = Radiobutton(self.MM_Frame, command=lambda: change_resolution())
         self.Radiobutton_highres.place(relx=0.42, rely=0.576, relheight=0.068, relwidth=0.469)
         self.Radiobutton_highres.configure(activebackground="#d9d9d9")
         self.Radiobutton_highres.configure(justify=LEFT)
@@ -576,7 +611,7 @@ class GUI:
         self.Radiobutton_highres.configure(value="low")
         self.Radiobutton_highres.configure(variable=gui_support.radio_resolution)
 
-        self.Radiobutton_lowres = Radiobutton(self.MM_Frame, command = lambda: change_resolution())
+        self.Radiobutton_lowres = Radiobutton(self.MM_Frame, command=lambda: change_resolution())
         self.Radiobutton_lowres.place(relx=0.43, rely=0.644, relheight=0.068, relwidth=0.415)
         self.Radiobutton_lowres.configure(activebackground="#d9d9d9")
         self.Radiobutton_lowres.configure(justify=LEFT)
@@ -584,7 +619,7 @@ class GUI:
         self.Radiobutton_lowres.configure(value="high")
         self.Radiobutton_lowres.configure(variable=gui_support.radio_resolution)
 
-        self.Button_mm_interrupt = Button(self.MM_Frame, command = lambda: mm_interupt())
+        self.Button_mm_interrupt = Button(self.MM_Frame, command=lambda: mm_interupt())
         self.Button_mm_interrupt.place(relx=0.642, rely=0.847, height=36
                                        , width=131)
         self.Button_mm_interrupt.configure(activebackground="#d80000")
@@ -607,21 +642,21 @@ class GUI:
         self.Entry_pathing_func.configure(selectbackground="#c4c4c4")
         self.Entry_pathing_func.configure(textvariable=gui_support.pathing_func)
 
-        #self.Radiobutton_absolute = Radiobutton(self.MM_Frame)
-        #self.Radiobutton_absolute.place(relx=0.444, rely=0.136, relheight=0.068, relwidth=0.205)
-        #self.Radiobutton_absolute.configure(activebackground="#d9d9d9")
-        #self.Radiobutton_absolute.configure(justify='left')
-        #self.Radiobutton_absolute.configure(text='''Absolute''')
-        #self.Radiobutton_absolute.configure(value="absolute")
-        #self.Radiobutton_absolute.configure(variable=gui_support.radio_pos_mode)
+        # self.Radiobutton_absolute = Radiobutton(self.MM_Frame)
+        # self.Radiobutton_absolute.place(relx=0.444, rely=0.136, relheight=0.068, relwidth=0.205)
+        # self.Radiobutton_absolute.configure(activebackground="#d9d9d9")
+        # self.Radiobutton_absolute.configure(justify='left')
+        # self.Radiobutton_absolute.configure(text='''Absolute''')
+        # self.Radiobutton_absolute.configure(value="absolute")
+        # self.Radiobutton_absolute.configure(variable=gui_support.radio_pos_mode)
 
-        #self.Radiobutton_relative = Radiobutton(self.MM_Frame)
-        #self.Radiobutton_relative.place(relx=0.444, rely=0.203, relheight=0.068, relwidth=0.19)
-        #self.Radiobutton_relative.configure(activebackground="#d9d9d9")
-        #self.Radiobutton_relative.configure(justify='left')
-        #self.Radiobutton_relative.configure(text='''Relative''')
-        #self.Radiobutton_relative.configure(value="relative")
-        #self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
+        # self.Radiobutton_relative = Radiobutton(self.MM_Frame)
+        # self.Radiobutton_relative.place(relx=0.444, rely=0.203, relheight=0.068, relwidth=0.19)
+        # self.Radiobutton_relative.configure(activebackground="#d9d9d9")
+        # self.Radiobutton_relative.configure(justify='left')
+        # self.Radiobutton_relative.configure(text='''Relative''')
+        # self.Radiobutton_relative.configure(value="relative")
+        # self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
 
         self.Current_Frame = Frame(top)
         self.Current_Frame.place(relx=0.0, rely=0.477, relheight=0.517
@@ -637,7 +672,7 @@ class GUI:
         self.Label_ps.configure(font=font9)
         self.Label_ps.configure(text='''Current/Power Supply''')
 
-        self.Button_ps_interrupt = Button(self.Current_Frame, command = lambda: supply_interupt())
+        self.Button_ps_interrupt = Button(self.Current_Frame, command=lambda: supply_interupt())
         self.Button_ps_interrupt.place(relx=0.642, rely=0.842, height=36
                                        , width=131)
         self.Button_ps_interrupt.configure(activebackground="#d80000")
@@ -765,6 +800,12 @@ class GUI:
         self.Button_square_run.configure(activebackground="#d9d9d9")
         self.Button_square_run.configure(text='''Run''')
 
+        self.Button_square_plot = Button(self.Notebook_ps_t1, command=lambda: plot_square())
+        self.Button_square_plot.place(relx=0.227, rely=0.714, height=26, width=125)
+
+        self.Button_square_plot.configure(activebackground="#d9d9d9")
+        self.Button_square_plot.configure(text='''Show Waveform''')
+
         self.Entry_sin_freq = Entry(self.Notebook_ps_t2)
         self.Entry_sin_freq.place(relx=0.324, rely=0.357, height=20
                                   , relwidth=0.178)
@@ -821,6 +862,12 @@ class GUI:
         self.Button_sin_run.place(relx=0.027, rely=0.714, height=26, width=50)
         self.Button_sin_run.configure(activebackground="#d9d9d9")
         self.Button_sin_run.configure(text='''Run''')
+
+        self.Button_sin_plot = Button(self.Notebook_ps_t2, command=lambda: plot_sin())
+        self.Button_sin_plot.place(relx=0.227, rely=0.714, height=26, width=125)
+
+        self.Button_sin_plot.configure(activebackground="#d9d9d9")
+        self.Button_sin_plot.configure(text='''Show Waveform''')
 
         self.Label_ramping_amp = Label(self.Notebook_ps_t3, anchor='w')
         self.Label_ramping_amp.place(relx=0.027, rely=0.071, height=18, width=99)
@@ -879,17 +926,23 @@ class GUI:
 
         self.Entry_ramping_duration = Entry(self.Notebook_ps_t3)
         self.Entry_ramping_duration.place(relx=0.324, rely=0.643, height=20
-                                      , relwidth=0.178)
+                                          , relwidth=0.178)
         self.Entry_ramping_duration.configure(background="white")
         self.Entry_ramping_duration.configure(font="TkFixedFont")
         self.Entry_ramping_duration.configure(textvariable=gui_support.ramping_duration)
         self.Entry_ramping_duration.configure(width=66)
 
-        self.Button_ramping_run = Button(self.Notebook_ps_t3, command = lambda: ramping_run())
+        self.Button_ramping_run = Button(self.Notebook_ps_t3, command=lambda: ramping_run())
         self.Button_ramping_run.place(relx=0.027, rely=0.857, height=26
                                       , width=50)
         self.Button_ramping_run.configure(activebackground="#d9d9d9")
         self.Button_ramping_run.configure(text='''Run''')
+
+        self.Button_ramping_plot = Button(self.Notebook_ps_t3, command=lambda: plot_ramping())
+        self.Button_ramping_plot.place(relx=0.227, rely=0.857, height=26, width=125)
+
+        self.Button_ramping_plot.configure(activebackground="#d9d9d9")
+        self.Button_ramping_plot.configure(text='''Show Waveform''')
 
         self.Button_stop = Button(self.Current_Frame, command=lambda: stop())
         self.Button_stop.place(relx=0.025, rely=0.850, height=26, width=170)
@@ -910,10 +963,10 @@ class GUI:
         self.Label_status.configure(font=font9)
         self.Label_status.configure(text='''Status''')
 
-        #self.Label_status_relpos = Label(self.Status_Frame, anchor='w')
-        #self.Label_status_relpos.place(relx=0.058, rely=0.076, height=18, width=144)
-        #self.Label_status_relpos.configure(activebackground="#f9f9f9")
-        #self.Label_status_relpos.configure(text='''Relative Position (um):''')
+        # self.Label_status_relpos = Label(self.Status_Frame, anchor='w')
+        # self.Label_status_relpos.place(relx=0.058, rely=0.076, height=18, width=144)
+        # self.Label_status_relpos.configure(activebackground="#f9f9f9")
+        # self.Label_status_relpos.configure(text='''Relative Position (um):''')
 
         self.Label_status_abspos = Label(self.Status_Frame, anchor='w')
         self.Label_status_abspos.place(relx=0.058, rely=0.114, height=18
@@ -948,13 +1001,13 @@ class GUI:
         self.Label_console.configure(activebackground="#f9f9f9")
         self.Label_console.configure(text='''Console Output''')
 
-        #self.Label_status_relpos_v = Label(self.Status_Frame, anchor='w')
-        #self.Label_status_relpos_v.place(relx=0.493, rely=0.076, height=18, width=160)
-        #self.Label_status_relpos_v.configure(activebackground="#f9f9f9")
-        #self.Label_status_relpos_v.configure(justify=LEFT)
-        #self.Label_status_relpos_v.configure(text='''Value''')
-        #self.Label_status_relpos_v.configure(textvariable=gui_support.status_relpos_v)
-        #self.Label_status_relpos_v.configure(width=89)
+        # self.Label_status_relpos_v = Label(self.Status_Frame, anchor='w')
+        # self.Label_status_relpos_v.place(relx=0.493, rely=0.076, height=18, width=160)
+        # self.Label_status_relpos_v.configure(activebackground="#f9f9f9")
+        # self.Label_status_relpos_v.configure(justify=LEFT)
+        # self.Label_status_relpos_v.configure(text='''Value''')
+        # self.Label_status_relpos_v.configure(textvariable=gui_support.status_relpos_v)
+        # self.Label_status_relpos_v.configure(width=89)
 
         self.Label_status_vel_v = Label(self.Status_Frame, anchor='w')
         self.Label_status_vel_v.place(relx=0.377, rely=0.152, height=18
@@ -982,13 +1035,13 @@ class GUI:
 
         self.Label_status_current = Label(self.Status_Frame)
         self.Label_status_current.place(relx=0.058, rely=0.307, height=18
-                , width=77)
+                                        , width=77)
         self.Label_status_current.configure(anchor='w')
         self.Label_status_current.configure(text='''Current (A):''')
 
         self.Label_status_current_v = Label(self.Status_Frame)
         self.Label_status_current_v.place(relx=0.319, rely=0.307, height=18
-                , width=97)
+                                          , width=97)
         self.Label_status_current_v.configure(anchor='w')
         self.Label_status_current_v.configure(text='''Value''')
         self.Label_status_current_v.configure(textvariable=gui_support.status_current_v)
@@ -1009,13 +1062,13 @@ class GUI:
 
         self.Label_status_duration = Label(self.Status_Frame)
         self.Label_status_duration.place(relx=0.058, rely=0.346, height=18
-                , width=83)
+                                         , width=83)
         self.Label_status_duration.configure(anchor='w')
         self.Label_status_duration.configure(text='''Duration (s):''')
 
         self.Label_status_duration_v = Label(self.Status_Frame)
         self.Label_status_duration_v.place(relx=0.319, rely=0.346, height=18
-                , width=37)
+                                           , width=37)
         self.Label_status_duration_v.configure(anchor='w')
         self.Label_status_duration_v.configure(text='''Label''')
         self.Label_status_duration_v.configure(textvariable=gui_support.status_duration_v)
@@ -1026,7 +1079,7 @@ class GUI:
         self.Button_status_refresh.configure(activebackground="#d9d9d9")
         self.Button_status_refresh.configure(text='''Refresh''')
 
-        self.Button_master_stop = Button(self.Status_Frame, command = lambda: master_stop())
+        self.Button_master_stop = Button(self.Status_Frame, command=lambda: master_stop())
         self.Button_master_stop.place(relx=0.319, rely=0.895, height=41
                                       , width=122)
         self.Button_master_stop.configure(activebackground="#d80000")
@@ -1036,12 +1089,12 @@ class GUI:
         self.Button_master_stop.configure(text='''STOP ALL''')
         self.Button_master_stop.configure(width=122)
 
-        self.Button_clear_console = Button(self.Status_Frame, command = lambda: clear_console())
+        self.Button_clear_console = Button(self.Status_Frame, command=lambda: clear_console())
         self.Button_clear_console.place(relx=0.7, rely=0.562, height=26, width=95)
         self.Button_clear_console.configure(activebackground="#d9d9d9")
         self.Button_clear_console.configure(text='''Clear Console''')
 
-        self.Button_print_console = Button(self.Status_Frame, command = lambda: write_log())
+        self.Button_print_console = Button(self.Status_Frame, command=lambda: write_log())
         self.Button_print_console.place(relx=0.475, rely=0.562, height=26, width=70)
         self.Button_print_console.configure(activebackground="#d9d9d9")
         self.Button_print_console.configure(text='''Write Log''')
@@ -1076,14 +1129,14 @@ class GUI:
 
         self.Label_demag_isntr1 = Label(self.Frame_demag, anchor='w')
         self.Label_demag_isntr1.place(relx=0.05, rely=0.050, height=18
-                                           , width=275)
+                                      , width=275)
         self.Label_demag_isntr1.configure(activebackground="#f9f9f9")
         self.Label_demag_isntr1.configure(justify=LEFT)
         self.Label_demag_isntr1.configure(text='''1. Hold Hall sensor away from any magnetic field''')
 
         self.Label_demag_isntr2 = Label(self.Frame_demag, anchor='w')
         self.Label_demag_isntr2.place(relx=0.05, rely=0.400, height=18
-                                     , width=300)
+                                      , width=300)
         self.Label_demag_isntr2.configure(activebackground="#f9f9f9")
         self.Label_demag_isntr2.configure(justify=LEFT)
         self.Label_demag_isntr2.configure(text='''3. Hold Hall sensor directly on the tip of the solenoid''')
@@ -1098,10 +1151,10 @@ class GUI:
         '''DEFAULT VALUES'''
         if mm == None:
             for child in self.MM_Frame.winfo_children():
-                child.configure(state = 'disable')
-        if supply == None:
-            for child in self.Current_Frame.winfo_children():
-                child.configure(state = 'disable')
+                child.configure(state='disable')
+        # if supply == None:
+        # for child in self.Current_Frame.winfo_children():
+        #    child.configure(state = 'disable')
 
         self.Entry_gtp_x.insert(0, "x")
         self.Entry_gtp_y.insert(0, "y")
@@ -1138,8 +1191,6 @@ class GUI:
         status_refresh()
 
 
-
-
 # The following code is added to facilitate the Scrolled widgets you specified.
 class AutoScroll(object):
     '''Configure the scrollbars for a widget.'''
@@ -1154,7 +1205,7 @@ class AutoScroll(object):
             pass
         hsb = ttk.Scrollbar(master, orient='horizontal', command=self.xview)
 
-        #self.configure(yscrollcommand=_autoscroll(vsb),
+        # self.configure(yscrollcommand=_autoscroll(vsb),
         #    xscrollcommand=_autoscroll(hsb))
         try:
             self.configure(yscrollcommand=self._autoscroll(vsb))
@@ -1175,10 +1226,10 @@ class AutoScroll(object):
         # Copy geometry methods of master  (taken from ScrolledText.py)
         if py3:
             methods = Pack.__dict__.keys() | Grid.__dict__.keys() \
-                  | Place.__dict__.keys()
+                      | Place.__dict__.keys()
         else:
             methods = Pack.__dict__.keys() + Grid.__dict__.keys() \
-                  + Place.__dict__.keys()
+                      + Place.__dict__.keys()
 
         for meth in methods:
             if meth[0] != '_' and meth not in ('config', 'configure'):
@@ -1187,6 +1238,7 @@ class AutoScroll(object):
     @staticmethod
     def _autoscroll(sbar):
         '''Hide and show scrollbar as needed.'''
+
         def wrapped(first, last):
             first, last = float(first), float(last)
             if first <= 0 and last >= 1:
@@ -1194,22 +1246,28 @@ class AutoScroll(object):
             else:
                 sbar.grid()
             sbar.set(first, last)
+
         return wrapped
 
     def __str__(self):
         return str(self.master)
 
+
 def _create_container(func):
     '''Creates a ttk Frame with a given master, and use this new frame to
     place the scrollbars and the widget.'''
+
     def wrapped(cls, master, **kw):
         container = ttk.Frame(master)
         return func(cls, container, **kw)
+
     return wrapped
+
 
 class ScrolledText(AutoScroll, Text):
     '''A standard Tkinter Text widget with scrollbars that will
     automatically show/hide as needed.'''
+
     @_create_container
     def __init__(self, master, **kw):
         Text.__init__(self, master, **kw)
@@ -1218,6 +1276,3 @@ class ScrolledText(AutoScroll, Text):
 
 if __name__ == '__main__':
     vp_start_gui()
-
-
-
