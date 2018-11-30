@@ -15,6 +15,8 @@ syms = make_symbol_table(use_numpy=True, step=step)
 aeval = Interpreter(syms)
 
 
+_CONTINUOUS_STEPS = 1000
+
 def visualize_wave(equation_str: str, variable: str, var_range: Tuple[float, float], discretization_step: float = None):
     """
     Displays a plot for visualizing a continuous function over a small period of time. Optionally can display
@@ -27,7 +29,7 @@ def visualize_wave(equation_str: str, variable: str, var_range: Tuple[float, flo
     """
 
     # Continuous first
-    aeval.symtable[variable] = np.arange(var_range[0], var_range[1], 0.01)
+    aeval.symtable[variable] = np.arange(var_range[0], var_range[1], (var_range[1]-var_range[0])/_CONTINUOUS_STEPS)
     cont_var = aeval.symtable[variable]
     aeval('cont_func = %s' % equation_str)
     cont_func = aeval.symtable['cont_func']
