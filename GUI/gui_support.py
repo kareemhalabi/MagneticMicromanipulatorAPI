@@ -36,8 +36,16 @@ def set_Tk_var():
     step_y = StringVar()
     global radio_resolution
     radio_resolution = StringVar()
-    global pathing_func
-    pathing_func = StringVar()
+    global path_x
+    path_x = StringVar()
+    global path_y
+    path_y = StringVar()
+    global path_z
+    path_z = StringVar()
+    global path_min
+    path_min = StringVar()
+    global path_max
+    path_max = StringVar()
     global constant_amps
     constant_amps = StringVar()
     global constant_duration

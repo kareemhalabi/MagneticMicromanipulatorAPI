@@ -211,13 +211,48 @@ class GUI:
                 self.console_output.insert(1.0, "Moving complete\n")
                 status_refresh()
 
-        def origin():
+        def save_pos():
             """
-            Calls the manipulator api function set_origin. Set the relative origin of the manipualtor.
-            Function no longer in use.
+            Saves the position currently entered into the 3 entry fields. This does not save the current position.
             """
-            mm.set_origin()
-            self.console_output.insert(1.0, "Origin set\n")
+            x = gui_support.gtp_x.get()
+            y = gui_support.gtp_y.get()
+            z = gui_support.gtp_z.get()
+            if (is_okay(x) or is_okay(y) or is_okay(z)):
+                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
+            else:
+                self.Listbox_pos.insert(0, str(x) + "x, " + str(y) + "y, " + str(z) + "z")
+                self.console_output.insert(1.0, "Position saved to list\n")
+
+        def go_to():
+            """
+            Moves manipulator to selected position in the listbox.
+            """
+            index = self.Listbox_pos.curselection()
+            selected = self.Listbox_pos.get(index)
+            if not selected:
+                self.console_output.insert(1.0, "Please select a destination\n")
+            else:
+                x, y, z = selected.split(", ")
+                x = x[: -1]
+                y = y[: -1]
+                z = z[: -1]
+                mmself.console_output.insert(1.0, "Moving to " + x + "x " + y + "y " + z + "z\n")
+                mm.set_mode(Mode.ABSOLUTE)
+                mm.go_to_position(float(x), float(y), float(z))
+                self.console_output.insert(1.0, "Moving complete\n")
+                status_refresh()
+
+        def delete():
+            """
+            Delete selected element from the list.
+            """
+            index = self.Listbox_pos.curselection()
+            if index == None:
+                self.console_output.insert(1.0, "Please select a destination\n")
+            else:
+                self.Listbox_pos.delete(index)
+                self.console_output.insert(1.0, "Deleted list entry\n")
 
         def step_x():
             """
@@ -298,6 +333,11 @@ class GUI:
 
             status_refresh()
 
+        def path():
+            """
+            Pathing function takes a parametric each equation for x y and z direction. Last two field are for the upper and lower bound.
+            """
+
         def master_stop():
             """
             Calls both the manipulator and supply interrupts and set duration to 0 which kills the timer thread.
@@ -332,11 +372,6 @@ class GUI:
             gui_support.status_duration_v.set("0")
             supply.stop_wave()
             self.console_output.insert(1.0, "Power supply output disabled\n")
-
-        def pathing():
-            # three entries, one for each axis
-            # two more entries for upper and lower bounds of time parameter
-            '''last'''
 
         def constant_run():
             """
@@ -491,7 +526,7 @@ class GUI:
         # GUI WIDGETS/ELEMENTS FOLLOW
 
         self.MM_Frame = Frame(top)
-        self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.469, relwidth=0.534)
+        self.MM_Frame.place(relx=0.0, rely=0.0, relheight=0.479, relwidth=0.534)
         self.MM_Frame.configure(relief=RAISED)
         self.MM_Frame.configure(borderwidth="2")
         self.MM_Frame.configure(relief=RAISED)
@@ -533,6 +568,24 @@ class GUI:
         self.Button_gtp.configure(activebackground="#d9d9d9")
         self.Button_gtp.configure(text='''Go To Position (um)''')
 
+        self.Listbox_pos = Listbox(self.MM_Frame)
+        self.Listbox_pos.place(relx=0.494, rely=0.068, relheight=0.217
+                               , relwidth=0.479)
+        self.Listbox_pos.configure(background="white")
+        self.Listbox_pos.configure(font="TkFixedFont")
+        self.Listbox_pos.configure(selectmode='single')
+        self.Listbox_pos.configure(width=194)
+
+        self.Button_goto = Button(self.MM_Frame, command=lambda: go_to())
+        self.Button_goto.place(relx=0.519, rely=0.305, height=26, width=62)
+        self.Button_goto.configure(activebackground="#d9d9d9")
+        self.Button_goto.configure(text='''Go To''')
+
+        self.Button_delete = Button(self.MM_Frame, command=lambda: delete())
+        self.Button_delete.place(relx=0.716, rely=0.305, height=26, width=62)
+        self.Button_delete.configure(activebackground="#d9d9d9")
+        self.Button_delete.configure(text='''Delete''')
+
         self.Button_step_x = Button(self.MM_Frame, command=lambda: step_x())
         self.Button_step_x.place(relx=0.198, rely=0.508, height=26, width=32)
         self.Button_step_x.configure(activebackground="#d9d9d9")
@@ -553,10 +606,10 @@ class GUI:
         self.Button_step_z.configure(activebackground="#d9d9d9")
         self.Button_step_z.configure(text='''z''')
 
-        # self.Button_setorigin = Button(self.MM_Frame, command = lambda: origin())
-        # self.Button_setorigin.place(relx=0.049, rely=0.305, height=26, width=87)
-        # self.Button_setorigin.configure(activebackground="#d9d9d9")
-        # self.Button_setorigin.configure(text='''Set Origin''')
+        self.Button_save_pos = Button(self.MM_Frame, command=lambda: save_pos())
+        self.Button_save_pos.place(relx=0.049, rely=0.305, height=26, width=100)
+        self.Button_save_pos.configure(activebackground="#d9d9d9")
+        self.Button_save_pos.configure(text='''Save Position''')
 
         self.Button_velocity = Button(self.MM_Frame, command=lambda: change_velocity())
         self.Button_velocity.place(relx=0.444, rely=0.475, height=26, width=118)
@@ -615,7 +668,7 @@ class GUI:
         self.Radiobutton_lowres.configure(variable=gui_support.radio_resolution)
 
         self.Button_mm_interrupt = Button(self.MM_Frame, command=lambda: mm_interupt())
-        self.Button_mm_interrupt.place(relx=0.642, rely=0.847, height=36
+        self.Button_mm_interrupt.place(relx=0.642, rely=0.705, height=36
                                        , width=131)
         self.Button_mm_interrupt.configure(activebackground="#d80000")
         self.Button_mm_interrupt.configure(background="#d80000")
@@ -623,19 +676,6 @@ class GUI:
         self.Button_mm_interrupt.configure(state=ACTIVE)
         self.Button_mm_interrupt.configure(text='''Interrupt''')
         self.Button_mm_interrupt.configure(width=131)
-
-        self.Label_pathing = Label(self.MM_Frame, anchor='w')
-        self.Label_pathing.place(relx=0.059, rely=0.9, height=18, width=110)
-        self.Label_pathing.configure(activebackground="#f9f9f9")
-        self.Label_pathing.configure(text='''Pathing Function''')
-
-        self.Entry_pathing_func = Entry(self.MM_Frame)
-        self.Entry_pathing_func.place(relx=0.168, rely=0.9, height=20
-                                      , relwidth=0.336)
-        self.Entry_pathing_func.configure(background="white")
-        self.Entry_pathing_func.configure(font="TkFixedFont")
-        self.Entry_pathing_func.configure(selectbackground="#c4c4c4")
-        self.Entry_pathing_func.configure(textvariable=gui_support.pathing_func)
 
         # self.Radiobutton_absolute = Radiobutton(self.MM_Frame)
         # self.Radiobutton_absolute.place(relx=0.444, rely=0.136, relheight=0.068, relwidth=0.205)
@@ -653,10 +693,84 @@ class GUI:
         # self.Radiobutton_relative.configure(value="relative")
         # self.Radiobutton_relative.configure(variable=gui_support.radio_pos_mode)
 
-        
+        self.Label_pathing = Label(self.MM_Frame)
+        self.Label_pathing.place(relx=0.049, rely=0.8, height=18, width=110)
+        self.Label_pathing.configure(activebackground="#f9f9f9")
+        self.Label_pathing.configure(text='''Pathing Function''')
+
+        self.Entry_path_x = Entry(self.MM_Frame)
+        self.Entry_path_x.place(relx=0.049, rely=0.868, height=20
+                                , relwidth=0.114)
+        self.Entry_path_x.configure(background="white")
+        self.Entry_path_x.configure(font="TkFixedFont")
+        self.Entry_path_x.configure(selectbackground="#c4c4c4")
+        self.Entry_path_x.configure(textvariable=gui_support.path_x)
+
+        self.Entry_path_y = Entry(self.MM_Frame)
+        self.Entry_path_y.place(relx=0.172, rely=0.868, height=20
+                                , relwidth=0.114)
+        self.Entry_path_y.configure(background="white")
+        self.Entry_path_y.configure(font="TkFixedFont")
+        self.Entry_path_y.configure(selectbackground="#c4c4c4")
+        self.Entry_path_y.configure(textvariable=gui_support.path_y)
+
+        self.Entry_path_z = Entry(self.MM_Frame)
+        self.Entry_path_z.place(relx=0.296, rely=0.868, height=20
+                                , relwidth=0.114)
+        self.Entry_path_z.configure(background="white")
+        self.Entry_path_z.configure(font="TkFixedFont")
+        self.Entry_path_z.configure(selectbackground="#c4c4c4")
+        self.Entry_path_z.configure(textvariable=gui_support.path_z)
+
+        self.Entry_path_min = Entry(self.MM_Frame)
+        self.Entry_path_min.place(relx=0.419, rely=0.868, height=20
+                                  , relwidth=0.114)
+        self.Entry_path_min.configure(background="white")
+        self.Entry_path_min.configure(font="TkFixedFont")
+        self.Entry_path_min.configure(selectbackground="#c4c4c4")
+        self.Entry_path_min.configure(textvariable=gui_support.path_min)
+
+        self.Entry_path_max = Entry(self.MM_Frame)
+        self.Entry_path_max.place(relx=0.543, rely=0.868, height=20
+                                  , relwidth=0.114)
+        self.Entry_path_max.configure(background="white")
+        self.Entry_path_max.configure(font="TkFixedFont")
+        self.Entry_path_max.configure(selectbackground="#c4c4c4")
+        self.Entry_path_max.configure(textvariable=gui_support.path_max)
+
+        self.Label_path_x = Label(self.MM_Frame)
+        self.Label_path_x.place(relx=0.049, rely=0.932, height=18, width=22)
+        self.Label_path_x.configure(anchor='w')
+        self.Label_path_x.configure(text='''x''')
+        self.Label_path_x.configure(width=22)
+
+        self.Label_path_y = Label(self.MM_Frame)
+        self.Label_path_y.place(relx=0.197, rely=0.932, height=18, width=22)
+        self.Label_path_y.configure(activebackground="#f9f9f9")
+        self.Label_path_y.configure(anchor='w')
+        self.Label_path_y.configure(text='''y''')
+
+        self.Label_path_z = Label(self.MM_Frame)
+        self.Label_path_z.place(relx=0.320, rely=0.932, height=18, width=22)
+        self.Label_path_z.configure(activebackground="#f9f9f9")
+        self.Label_path_z.configure(anchor='w')
+        self.Label_path_z.configure(text='''z''')
+
+        self.Label_path_bound = Label(self.MM_Frame)
+        self.Label_path_bound.place(relx=0.419, rely=0.932, height=18, width=132)
+
+        self.Label_path_bound.configure(activebackground="#f9f9f9")
+        self.Label_path_bound.configure(anchor='w')
+        self.Label_path_bound.configure(text='''min and max bound''')
+        self.Label_path_bound.configure(width=132)
+
+        self.Button_path = Button(self.MM_Frame)
+        self.Button_path.place(relx=0.666, rely=0.853, height=26, width=43)
+        self.Button_path.configure(activebackground="#d9d9d9")
+        self.Button_path.configure(text='''Go''')
 
         self.Current_Frame = Frame(top)
-        self.Current_Frame.place(relx=0.0, rely=0.477, relheight=0.517
+        self.Current_Frame.place(relx=0.0, rely=0.487, relheight=0.5
                                  , relwidth=0.534)
         self.Current_Frame.configure(relief=RAISED)
         self.Current_Frame.configure(borderwidth="2")
@@ -1185,6 +1299,7 @@ class GUI:
         gui_support.status_res_v.set("Low")
         gui_support.status_vel_v.set("500")
         gui_support.status_wave_v.set("Constant")
+        self.Listbox_pos.insert(END, "0x, 0y, 0z")
         status_refresh()
 
 
@@ -1273,3 +1388,4 @@ class ScrolledText(AutoScroll, Text):
 
 if __name__ == '__main__':
     vp_start_gui()
+
