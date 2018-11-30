@@ -1,5 +1,12 @@
 Adafruit-ADS1x15==1.0.2
 Adafruit-GPIO==1.0.3
 Adafruit-PureIO==0.2.3
-cexprtk==0.3.3
+asteval==0.9.13
+cycler==0.10.0
+kiwisolver==1.0.1
+matplotlib==3.0.2
+numpy==1.15.4
+pyparsing==2.3.0
 pyserial==3.4
+python-dateutil==2.7.5
+six==1.11.0
