@@ -7,6 +7,19 @@ from asteval import Interpreter
 
 aeval = Interpreter()
 
+aeval("""
+def step(x):
+    \"\"\"
+    Heaviside step function
+    step(x) = 0 if x < 0
+            = 1 if x >= 0
+
+    :param x:
+    :return:
+    \"\"\"
+
+    return int(x >= 0)
+""")
 
 def visualize_wave(equation_str: str, variable: str, var_range: Tuple[float, float], discretization_step: float = None):
     """
