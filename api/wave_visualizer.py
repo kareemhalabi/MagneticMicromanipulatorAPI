@@ -3,23 +3,17 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
-from asteval import Interpreter
+from asteval import Interpreter, make_symbol_table
 
-aeval = Interpreter()
 
-aeval("""
 def step(x):
-    \"\"\"
-    Heaviside step function
-    step(x) = 0 if x < 0
-            = 1 if x >= 0
+    return np.heaviside(x, 0)
 
-    :param x:
-    :return:
-    \"\"\"
 
-    return int(x >= 0)
-""")
+syms = make_symbol_table(use_numpy=True, step=step)
+
+aeval = Interpreter(syms)
+
 
 def visualize_wave(equation_str: str, variable: str, var_range: Tuple[float, float], discretization_step: float = None):
     """
