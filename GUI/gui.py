@@ -215,14 +215,10 @@ class GUI:
             """
             Saves the position currently entered into the 3 entry fields. This does not save the current position.
             """
-            x = gui_support.gtp_x.get()
-            y = gui_support.gtp_y.get()
-            z = gui_support.gtp_z.get()
-            if (is_okay(x) or is_okay(y) or is_okay(z)):
-                self.console_output.insert(1.0, "Only numbers, '-', and '.' are allowed. Please check format\n")
-            else:
-                self.Listbox_pos.insert(0, str(x) + "x, " + str(y) + "y, " + str(z) + "z")
-                self.console_output.insert(1.0, "Position saved to list\n")
+            mm.set_mode(Mode.ABSOLUTE)
+            x, y, z = mm.get_current_position()
+            self.Listbox_pos.insert(0, str(x) + "x, " + str(y) + "y, " + str(z) + "z")
+            self.console_output.insert(1.0, "Position saved to list\n")
 
         def go_to():
             """
@@ -607,9 +603,9 @@ class GUI:
         self.Button_step_z.configure(text='''z''')
 
         self.Button_save_pos = Button(self.MM_Frame, command=lambda: save_pos())
-        self.Button_save_pos.place(relx=0.049, rely=0.305, height=26, width=100)
+        self.Button_save_pos.place(relx=0.049, rely=0.305, height=26, width=125)
         self.Button_save_pos.configure(activebackground="#d9d9d9")
-        self.Button_save_pos.configure(text='''Save Position''')
+        self.Button_save_pos.configure(text='''Save Present Position''')
 
         self.Button_velocity = Button(self.MM_Frame, command=lambda: change_velocity())
         self.Button_velocity.place(relx=0.444, rely=0.475, height=26, width=118)
@@ -781,7 +777,7 @@ class GUI:
         self.Label_ps.place(relx=0.025, rely=0.031, height=23, width=190)
         self.Label_ps.configure(activebackground="#f9f9f9")
         self.Label_ps.configure(font=font9)
-        self.Label_ps.configure(text='''Current/Power Supply''')
+        self.Label_ps.configure(text='''Power Supply''')
 
         self.Button_ps_interrupt = Button(self.Current_Frame, command=lambda: supply_interupt())
         self.Button_ps_interrupt.place(relx=0.642, rely=0.842, height=36
@@ -1263,9 +1259,6 @@ class GUI:
         if mm == None:
             for child in self.MM_Frame.winfo_children():
                 child.configure(state='disable')
-        # if supply == None:
-        # for child in self.Current_Frame.winfo_children():
-        #    child.configure(state = 'disable')
 
         self.Entry_gtp_x.insert(0, "x")
         self.Entry_gtp_y.insert(0, "y")
