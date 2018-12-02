@@ -467,6 +467,7 @@ class GUI:
                     supply.disable_output()
                     supply.stop_wave()
                     break
+                self.console_output.delete(1.0)
                 self.console_output.insert(1.0, "Remaining duration: " + str(duration) + "\n")
                 time.sleep(1)
                 duration = duration - 1
