@@ -1254,7 +1254,7 @@ class GUI:
                                       , width=335)
         self.Label_demag_isntr3.configure(activebackground="#f9f9f9")
         self.Label_demag_isntr3.configure(justify=LEFT)
-        self.Label_demag_isntr3.configure(text='''*Note that there is a 3 second delay after clicking each button''')
+        self.Label_demag_isntr3.configure(text='''*Note that there is a 3 second delay on each button''')
 
         '''DEFAULT VALUES'''
         if mm == None:
