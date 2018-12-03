@@ -22,3 +22,6 @@ enable vnc, ssh, and configure other personal settings
 sudo apt-get install tcl
 sudo apt-get install tk
 sudo apt-get install ntfs-3g
+sudo apt install libatlas3-base
+pip3 install matplotlib
+pip3 install numpy
