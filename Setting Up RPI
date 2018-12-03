@@ -25,3 +25,19 @@ sudo apt-get install ntfs-3g
 sudo apt install libatlas3-base
 pip3 install matplotlib
 pip3 install numpy
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ADS1115 Specific instructions
+Refer to 
+https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/ads1015-slash-ads1115 
+
+sudo apt-get update
+sudo apt-get install build-essential python-dev python-smbus git
+cd ~
+git clone https://github.com/adafruit/Adafruit_Python_ADS1x15.git
+cd Adafruit_Python_ADS1x15
+sudo python setup.py install
+
+sudo apt-get update
+sudo apt-get install build-essential python-dev python-smbus python-pip
+sudo pip install adafruit-ads1x15
