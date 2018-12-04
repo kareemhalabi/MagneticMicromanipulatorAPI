@@ -604,7 +604,7 @@ class GUI:
         self.Button_step_z.configure(text='''z''')
 
         self.Button_save_pos = Button(self.MM_Frame, command=lambda: save_pos())
-        self.Button_save_pos.place(relx=0.049, rely=0.305, height=26, width=125)
+        self.Button_save_pos.place(relx=0.049, rely=0.305, height=26, width=145)
         self.Button_save_pos.configure(activebackground="#d9d9d9")
         self.Button_save_pos.configure(text='''Save Present Position''')
 
