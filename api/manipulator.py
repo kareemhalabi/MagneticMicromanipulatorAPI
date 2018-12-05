@@ -24,7 +24,7 @@ class Manipulator:
     def __init__(self, comm_port: str):
 
         self.serial_conn = serial.Serial(comm_port, baudrate=9600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
-                                         stopbits=serial.STOPBITS_ONE)
+                                         stopbits=serial.STOPBITS_ONE, timeout=10, write_timeout=10)
 
     def __del__(self):
         self.serial_conn.close()
@@ -197,7 +197,7 @@ class Manipulator:
         flag_byte = status_bytes[0]
         flag_2_byte = status_bytes[15]
 
-        return {
+        status = {
             'FLAGS': {
                 'SETUP': flag_byte & 0b00001111,
                 'ROE_DIR': 'Negative' if (flag_byte & (1 << 4)) == (1 << 4) else 'Positive',
@@ -230,8 +230,17 @@ class Manipulator:
             'WATCH_DOG': int.from_bytes(status_bytes[22:24], byteorder='little'),
             'STEP_DIV': int.from_bytes(status_bytes[24:26], byteorder='little'),
             'STEP_MUL': int.from_bytes(status_bytes[26:28], byteorder='little'),
-            'XSPEED_RES': 'Low Resolution' if (int.from_bytes(status_bytes[28:30], byteorder='little') & (1 << 15)) == (
-                    1 << 15) else 'High Resolution',
+            'XSPEED_RES': 'High Resolution' if (int.from_bytes(status_bytes[28:30], byteorder='little') & (1 << 15)) == (
+                    1 << 15) else 'Low Resolution',
             'XSPEED': int.from_bytes(status_bytes[28:30], byteorder='little') & ~(1 << 15),
             'VERSION': status_bytes[30:32]  # TODO Bytes 31 and 32 Could be integer or Binary Coded decimal
         }
+
+        # Convert the XSPEED back to an actual velocity value
+
+        if status['XSPEED_RES'] == 'Low Resolution':
+            status['XSPEED'] *= 10 / _USTEPS_PER_UM_
+        else:
+            status['XSPEED'] *= 50 / _USTEPS_PER_UM_
+
+        return status
